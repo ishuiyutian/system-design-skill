@@ -1,20 +1,20 @@
 # System Design Skill Launch Kit
 
-Canonical repository: <https://github.com/pinchen147/system-design-skill>
+Canonical repository: <https://github.com/ishuiyutian/system-design-skill>
 
-Release: <https://github.com/pinchen147/system-design-skill/releases/tag/v1.1.0>
+Release: <https://github.com/ishuiyutian/system-design-skill/releases/tag/v1.4.0>
 
 Install:
 
 ```bash
-npx skills@latest add pinchen147/system-design-skill
+npx skills@latest add ishuiyutian/system-design-skill
 ```
 
 Claude plugin:
 
 ```bash
-claude plugin marketplace add pinchen147/system-design-skill
-claude plugin install system-design-skill@pinchen-skills
+claude plugin marketplace add ishuiyutian/system-design-skill
+claude plugin install system-design-skill@ishuiyutian-skills
 ```
 
 ## X
@@ -29,9 +29,9 @@ Works with Claude Code, Codex, Cursor, and other Agent Skills-compatible coding 
 
 Install:
 
-`npx skills@latest add pinchen147/system-design-skill`
+`npx skills@latest add ishuiyutian/system-design-skill`
 
-<https://github.com/pinchen147/system-design-skill>
+<https://github.com/ishuiyutian/system-design-skill>
 
 ## LinkedIn
 
@@ -53,9 +53,9 @@ It outputs a self-contained single-page HTML report, a structured `design.json`,
 
 The skill is free, MIT licensed, and works with Claude Code, Codex, Cursor, and other compatible agents:
 
-`npx skills@latest add pinchen147/system-design-skill`
+`npx skills@latest add ishuiyutian/system-design-skill`
 
-<https://github.com/pinchen147/system-design-skill>
+<https://github.com/ishuiyutian/system-design-skill>
 
 ## Reddit
 
@@ -78,10 +78,10 @@ The output is:
 It is free and MIT licensed:
 
 ```bash
-npx skills@latest add pinchen147/system-design-skill
+npx skills@latest add ishuiyutian/system-design-skill
 ```
 
-Repository: <https://github.com/pinchen147/system-design-skill>
+Repository: <https://github.com/ishuiyutian/system-design-skill>
 
 I would especially value feedback on the requirements interview and whether each candidate earns its complexity in your own repositories.
 
@@ -93,7 +93,7 @@ Show HN: System Design from Evidence, Not Vibes – a Free Agent Skill
 
 ### Submission URL
 
-<https://github.com/pinchen147/system-design-skill>
+<https://github.com/ishuiyutian/system-design-skill>
 
 ### First comment
 
@@ -121,19 +121,19 @@ The skill surveys the current system, interviews the user only on unresolved req
 
 The repository includes real repository-evolution, greenfield, and interview examples:
 
-<https://github.com/pinchen147/system-design-skill>
+<https://github.com/ishuiyutian/system-design-skill>
 
 Install:
 
 ```bash
-npx skills@latest add pinchen147/system-design-skill
+npx skills@latest add ishuiyutian/system-design-skill
 ```
 
 If this fits your audience, I would be happy for you to try it against an existing repository and share an honest result.
 
 Best,
 
-Pin Chen
+Yuanlei Hong
 
 ## Publishing status
 

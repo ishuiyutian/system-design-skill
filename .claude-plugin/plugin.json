@@ -3,11 +3,11 @@
   "version": "1.4.0",
   "description": "Reads a repository as its current architecture, closes the open requirements, runs the capacity math, and compares structurally distinct candidates before recommending one. Outputs an interactive HTML report, a structured design.json, and a durable DESIGN.md.",
   "author": {
-    "name": "Pin Chen",
-    "url": "https://github.com/pinchen147"
+    "name": "Yuanlei Hong",
+    "url": "https://github.com/ishuiyutian"
   },
-  "homepage": "https://github.com/pinchen147/system-design-skill",
-  "repository": "https://github.com/pinchen147/system-design-skill",
+  "homepage": "https://github.com/ishuiyutian/system-design-skill",
+  "repository": "https://github.com/ishuiyutian/system-design-skill",
   "license": "MIT",
   "keywords": [
     "system-design",

@@ -1,7 +1,7 @@
 {
-  "name": "pinchen-skills",
-  "description": "Skills by Pin Chen. Currently: system design from repository evidence, requirements, capacity math, and explicit trade-offs.",
-  "owner": { "name": "Pin Chen", "url": "https://github.com/pinchen147" },
+  "name": "ishuiyutian-skills",
+  "description": "Skills by Yuanlei Hong. Currently: system design from repository evidence, requirements, capacity math, and explicit trade-offs.",
+  "owner": { "name": "Yuanlei Hong", "url": "https://github.com/ishuiyutian" },
   "plugins": [
     {
       "name": "system-design-skill",

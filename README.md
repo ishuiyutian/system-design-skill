@@ -13,7 +13,7 @@ Pick one path. Both load the same skill, so installing both makes `/system-desig
 ### Codex, Claude Code, Cursor, and other compatible agents
 
 ```bash
-npx skills@latest add pinchen147/system-design-skill
+npx skills@latest add ishuiyutian/system-design-skill
 ```
 
 Choose which agent should receive the skill. The files remain editable, and you decide when to pull updates:
@@ -27,8 +27,8 @@ npx skills update
 Use the plugin when you want a managed, versioned installation:
 
 ```bash
-claude plugin marketplace add pinchen147/system-design-skill
-claude plugin install system-design-skill@pinchen-skills
+claude plugin marketplace add ishuiyutian/system-design-skill
+claude plugin install system-design-skill@ishuiyutian-skills
 ```
 
 Claude namespaces marketplace skills to prevent collisions. Invoke this installation as:
@@ -40,7 +40,7 @@ Claude namespaces marketplace skills to prevent collisions. Invoke this installa
 Update it with:
 
 ```bash
-claude plugin update system-design-skill@pinchen-skills
+claude plugin update system-design-skill@ishuiyutian-skills
 ```
 
 ## Quick start
@@ -267,8 +267,8 @@ Each run stops at the first Skill request or reaches a terminal result within it
 
 ## Support and security
 
-- Ask usage questions or report bugs through [GitHub Issues](https://github.com/pinchen147/system-design-skill/issues).
-- Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/pinchen147/system-design-skill/security/advisories/new).
+- Ask usage questions or report bugs through [GitHub Issues](https://github.com/ishuiyutian/system-design-skill/issues).
+- Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/ishuiyutian/system-design-skill/security/advisories/new).
 - Read the package’s data-handling and review guidance in [`SECURITY.md`](SECURITY.md).
 
 ## License

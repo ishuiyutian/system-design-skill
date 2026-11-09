@@ -3,7 +3,7 @@
 Install once:
 
 ```bash
-npx skills@latest add pinchen147/system-design-skill
+npx skills@latest add ishuiyutian/system-design-skill
 ```
 
 Then start with the prompt exactly as given:

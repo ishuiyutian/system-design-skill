@@ -38,7 +38,7 @@ The host agent and any model provider may have their own data-handling behavior.
 
 Do not publish a security issue before maintainers have had a reasonable opportunity to investigate it.
 
-Report vulnerabilities privately through [GitHub’s security advisory form](https://github.com/pinchen147/system-design-skill/security/advisories/new). Include:
+Report vulnerabilities privately through [GitHub’s security advisory form](https://github.com/ishuiyutian/system-design-skill/security/advisories/new). Include:
 
 - the affected version or commit;
 - the file and behavior involved;
