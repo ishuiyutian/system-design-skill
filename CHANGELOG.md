@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented here.
 
+## 1.4.1 — 2026-11-09
+
+### Added
+
+- `render_report.py` derives the default output path from the design's `slug` (`${TMPDIR:-<system temp>}/system-design-<slug>.html`) when `--out` is omitted, and rejects an unsafe slug before writing.
+
+### Changed
+
+- The skill description is a concise summary plus `USE for:` / `SKIP for:` routing blocks; execution detail lives in `SKILL.md`'s opening, and a contract test asserts the routing vocabulary and the absence of execution jargon.
+- Invocation validation is host-agnostic: `test-skill-contract.py` is the portable gate, and `eval-invocation.py` is documented as one Claude Code adapter rather than a Claude-only requirement.
+- The fork ships as `ishuiyutian/system-design-skill` with its own author, install commands, and support links.
+
+### Fixed
+
+- `SKILL.md` frontmatter is valid YAML again: the unquoted description contained a colon-space, which made `npx skills` fail with "Nested mappings are not allowed in compact mappings".
+
 ## 1.4.0 — 2026-10-21
 
 ### Added

@@ -11,11 +11,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, Optional
 
 PLACEHOLDER = "__DESIGN_JSON__"
 
@@ -84,12 +86,27 @@ def check_title(design: dict, rendered: str, out_path: Path) -> None:
         )
 
 
+def resolve_out_path(out: Optional[Path], design: dict) -> Path:
+    if out is not None:
+        return out.expanduser().resolve()
+    slug = design.get("slug")
+    if not isinstance(slug, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", slug):
+        fail("design has no usable slug for the default --out path; pass --out <path>")
+    base = Path(os.environ.get("TMPDIR") or tempfile.gettempdir())
+    return (base / f"system-design-{slug}.html").resolve()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Render a design.json into a standalone system-design report."
     )
     parser.add_argument("--design", type=Path, required=True, help="path to design.json")
-    parser.add_argument("--out", type=Path, required=True, help="path to write the HTML report")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        help="path to write the HTML report; defaults to "
+        "${TMPDIR:-<system temp>}/system-design-<slug>.html",
+    )
     parser.add_argument(
         "--no-open",
         action="store_true",
@@ -131,7 +148,7 @@ def main() -> None:
     design = read_design(args.design)
     rendered = template.replace(PLACEHOLDER, encode(design))
 
-    out_path = args.out.expanduser().resolve()
+    out_path = resolve_out_path(args.out, design)
     try:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(rendered, encoding="utf-8")

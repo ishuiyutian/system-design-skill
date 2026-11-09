@@ -17,17 +17,17 @@ The artifact and schema contract for [SKILL.md](SKILL.md): the component types u
 |---|---|---|
 | `design.json` | `docs/design/<slug>/` (git repo) or `./<slug>/` (no repo) | Source of truth; every iteration edits this first |
 | `DESIGN.md` | Beside `design.json` | Regenerated from the JSON every iteration; a `## Notes` section, if present, is preserved verbatim |
-| `system-design-<slug>.html` | `${TMPDIR:-/tmp}` | A render, regenerated any time; never hand-edited, never committed |
+| `system-design-<slug>.html` | `${TMPDIR:-/tmp}` by default, or `--out` | A render, regenerated any time; never hand-edited, never committed |
 
 ## Render mechanics
 
 Run the shipped script from the skill's own directory:
 
 ```
-python3 <skill-dir>/scripts/render_report.py --design docs/design/<slug>/design.json --out "${TMPDIR:-/tmp}/system-design-<slug>.html"
+python3 <skill-dir>/scripts/render_report.py --design docs/design/<slug>/design.json
 ```
 
-`<skill-dir>` is the directory holding `SKILL.md`; the script resolves the template relative to itself. It also opens the report once written—`open` on macOS, `xdg-open` or `wslview` on Linux, `start` on Windows—so no separate step can be missed. `--no-open` or `SYSTEM_DESIGN_NO_OPEN=1` suppresses it for scripted and headless runs; failing to open is reported but never fatal, since the file is already on disk.
+`<skill-dir>` is the directory holding `SKILL.md`; the script resolves the template relative to itself. The default output is `${TMPDIR:-<system temp>}/system-design-<slug>.html`, derived from the design's `slug`; `--out <path>` overrides it. It also opens the report once written—`open` on macOS, `xdg-open` or `wslview` on Linux, `start` on Windows—so no separate step can be missed. `--no-open` or `SYSTEM_DESIGN_NO_OPEN=1` suppresses it for scripted and headless runs; failing to open is reported but never fatal, since the file is already on disk.
 
 Never read `assets/report-template.html` into context and never rebuild the report by hand. It is 82 KB of renderer code, the substitution is mechanical, and a 27 KB JSON payload full of `/` is corrupted by `sed` and by shell interpolation. The script asserts the placeholder appears exactly once, fails before writing anything on malformed JSON—including `NaN` and `Infinity`, which the page's parser rejects—or on a top-level value that is not an object, and escapes `</` as `<\/` so that no string value can terminate the embedded `<script type="application/json">` block—an unescaped `</script>` inside any `note`, `label`, or `thesis` silently truncates the payload and renders a report titled `System design report` with most components missing.
 

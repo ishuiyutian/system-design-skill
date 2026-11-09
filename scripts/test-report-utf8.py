@@ -1,6 +1,7 @@
 """Regression checks for UTF-8 report I/O; no browser or network required."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -32,6 +33,44 @@ class Utf8IO(unittest.TestCase):
             self.assertIn("架構", html)
             self.assertIn(payload["title"], html)
             self.assertIn("<\\/script>", html)
+
+    def test_default_out_uses_slug_in_tmpdir(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            template, design = root / "template.html", root / "design.json"
+            tmpdir = root / "tmp"
+            tmpdir.mkdir()
+            template.write_text("__DESIGN_JSON__", encoding="utf-8")
+            design.write_text(
+                json.dumps({"title": "Speech mirror", "slug": "speech-mirror"}),
+                encoding="utf-8",
+            )
+            with patch.object(renderer, "TEMPLATE", template), \
+                    patch.dict(os.environ, {"TMPDIR": str(tmpdir)}), \
+                    patch("sys.argv", ["renderer", "--design", str(design), "--no-open"]):
+                renderer.main()
+            out = (tmpdir / "system-design-speech-mirror.html").resolve()
+            self.assertTrue(out.is_file())
+            self.assertIn('"slug": "speech-mirror"', out.read_text(encoding="utf-8"))
+
+    def test_default_out_rejects_unsafe_slug(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            template, design = root / "template.html", root / "design.json"
+            tmpdir = root / "tmp"
+            tmpdir.mkdir()
+            template.write_text("__DESIGN_JSON__", encoding="utf-8")
+            design.write_text(
+                json.dumps({"title": "Unsafe", "slug": "../escape"}),
+                encoding="utf-8",
+            )
+            with patch.object(renderer, "TEMPLATE", template), \
+                    patch.dict(os.environ, {"TMPDIR": str(tmpdir)}), \
+                    patch("sys.argv", ["renderer", "--design", str(design), "--no-open"]):
+                with self.assertRaises(SystemExit) as raised:
+                    renderer.main()
+            self.assertEqual(2, raised.exception.code)
+            self.assertFalse((root / "escape.html").exists())
 
     def test_invalid_utf8_has_clear_exit(self):
         with tempfile.TemporaryDirectory() as folder:

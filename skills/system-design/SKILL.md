@@ -14,7 +14,7 @@ description: >-
 license: MIT
 metadata:
   author: ishuiyutian
-  version: "1.4.0"
+  version: "1.4.1"
 ---
 
 # System Design
@@ -169,11 +169,10 @@ Then render and open it. The run is not complete until the report exists on disk
 
 ```bash
 python3 <skill-dir>/scripts/render_report.py \
-  --design docs/design/<slug>/design.json \
-  --out "${TMPDIR:-/tmp}/system-design-<slug>.html"
+  --design docs/design/<slug>/design.json
 ```
 
-The script opens the report itself once it is written, so there is no separate step to forget. Pass `--no-open` only when nobody is watching—a scripted or headless run. Whatever fails, iterate through `design.json`: never read [assets/report-template.html](assets/report-template.html) into context, rebuild the report by hand, or edit the rendered HTML; see [HTML-REPORT.md](HTML-REPORT.md). The report must contain only its own title/date chrome—no prototype or harness wrapper.
+By default it writes and opens `${TMPDIR:-/tmp}/system-design-<slug>.html`, reading `slug` from `design.json`; pass `--out <path>` to write somewhere else. The script opens the report itself once it is written, so there is no separate step to forget. Pass `--no-open` only when nobody is watching—a scripted or headless run. Whatever fails, iterate through `design.json`: never read [assets/report-template.html](assets/report-template.html) into context, rebuild the report by hand, or edit the rendered HTML; see [HTML-REPORT.md](HTML-REPORT.md). The report must contain only its own title/date chrome—no prototype or harness wrapper.
 
 Then confirm the render survived. The page sets its title at run time, so the static file's `<title>` tag keeps the template's `System design report` placeholder; check instead that the embedded `application/json` block carries the design's own `title` and that no `__DESIGN_JSON__` remains. With a browser tool, load every architecture route and read the hidden `report-diagnostics` element: `data-component-overlaps`, `data-route-collisions`, `data-text-overflows`, `data-fit-overflows`, and `data-label-occlusions` must all be `0`.
 
@@ -182,7 +181,8 @@ When a command or check does not go as described, act on what you observe:
 | You observe | It means | Next |
 |---|---|---|
 | `render_report: cannot read design …`, `malformed JSON in …`, or `… must hold a JSON object` | `design.json` is missing, is not valid JSON (`NaN` and `Infinity` included), or is not an object; nothing was written | Fix the path or the file at the place the message names, then re-render |
-| `render_report: cannot write <path>` | The `--out` directory is not writable; a path of `/system-design-…` means `$TMPDIR` was unset | Re-run with the `${TMPDIR:-/tmp}` form above, or another writable path |
+| `render_report: cannot write <path>` | The `--out` directory is not writable | Re-run with `--out <writable-path>` |
+| `render_report: design has no usable slug for the default --out path` | `design.json` lacks a safe kebab-case `slug`, so the default filename cannot be derived | Add a `slug`, or pass `--out <path>` |
 | `render_report.py` not found, `render_report: cannot read template …`, or `… must contain __DESIGN_JSON__ exactly once` | `<skill-dir>` is unknown or names a damaged copy of the skill | `ls ~/.claude/skills/system-design/scripts/render_report.py ~/.agents/skills/system-design/scripts/render_report.py 2>/dev/null` covers both standalone installs; a plugin install lives under `~/.claude/plugins/cache/` |
 | `render_report: warning: … has no design title` | `design.json` lacks `title`, so the page heading reads `System design report` | Add `title`, then re-render |
 | The page reads `This is the empty report template` | The payload never reached the page | Re-render with the installed skill's `render_report.py`, never a copied or hand-filled template; if the script's own output still shows this, report it as a renderer defect |
