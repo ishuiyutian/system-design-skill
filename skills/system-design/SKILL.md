@@ -1,20 +1,16 @@
 ---
 name: system-design
 description: >-
-  Design or evolve a production system from repository evidence, measurable
-  requirements, capacity math, protected invariants, and explicit trade-offs.
-  Draws structurally distinct candidates, recommends one with a chained evidence
-  argument, and writes an interactive HTML report, a structured design.json, and
-  a DESIGN.md a later session can resume; in an existing repository it also
-  audits the implementation for architectural debt against the intended design.
-  Use for evolving a repository's architecture, greenfield systems, scaling and
-  sharding plans, datastore or consistency choices, capacity and cost sizing,
-  recording a decision as an ADR, or auditing drift from a recorded design. Also
-  use for a single architecture choice with workload numbers attached, even one
-  that looks small - it checks them against overengineering gates and answers in
-  a paragraph when they settle it. Skip for explaining how a technology or
-  existing code works, debugging, and code-level edits such as refactoring a
-  function.
+  Designs or evolves a production system from repository evidence, capacity
+  math, invariants, and explicit trade-offs; outputs an interactive HTML report,
+  design.json, and a resumable DESIGN.md, and audits architectural debt in an
+  existing repository.
+  USE for: architecture decisions of any size - evolving a repository, greenfield
+  systems, scaling or sharding, datastore, consistency, or caching choices,
+  capacity and cost sizing, recording an ADR, drift audits, or a single choice
+  with workload numbers.
+  SKIP for: explaining how a technology or existing code works, debugging, and
+  code-level edits such as refactoring.
 license: MIT
 metadata:
   author: ishuiyutian
@@ -22,6 +18,10 @@ metadata:
 ---
 
 # System Design
+
+## Read this first
+
+The frontmatter description decides whether this skill applies. This file decides the run: step 0 sets the depth, step 1 sets the mode, step 8 adds the debt audit in repository mode, and step 9 writes and verifies the artifacts. A direct answer with no artifacts is a valid completion.
 
 Architecture is decided by invariants, workload numbers, failure modes, and operating constraints—not vibes. Draw the simplest production-viable candidate first, add only evidence-surviving alternatives that differ on a load-bearing axis, recommend one with an evidence chain, and leave a design artifact another coding-agent session can continue.
 

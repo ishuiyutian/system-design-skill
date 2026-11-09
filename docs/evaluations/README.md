@@ -1,10 +1,14 @@
 # Invocation evaluation
 
-After changing the skill description, run `python3 scripts/eval-invocation.py --runs 3 --output-dir /tmp/system-design-invocation-NEW` before shipping it. Choose a new output directory for each run; existing directories are rejected to preserve prior evidence. Fixtures in [invocation-cases.json](invocation-cases.json) define expected discovery. Change an incorrect fixture in a separate commit with its reason.
+After changing the skill description, the portable gate is the host-agnostic `python3 scripts/test-skill-contract.py`. When a compatible live host is authenticated, also run `python3 scripts/eval-invocation.py --runs 3 --output-dir /tmp/system-design-invocation-NEW` as discovery evidence. The bundled evaluator is one Claude Code adapter, not a requirement that the skill targets Claude. Choose a new output directory for each run; existing directories are rejected to preserve prior evidence. Fixtures in [invocation-cases.json](invocation-cases.json) define expected discovery and are host-agnostic. Change an incorrect fixture in a separate commit with its reason.
+
+## Host adapters
+
+The fixtures describe routing intent, not a vendor. `scripts/eval-invocation.py` implements the Claude Code adapter (`claude -p … stream-json`). Another agent earns a supported-host claim only by shipping an adapter that emits the same trial record and passes the same fixtures; until then, treat live results as evidence for that one host, not a universal reliability guarantee.
 
 ## What passes
 
-A trial observes invocation when Claude requests the target `Skill` tool, then stops the process to avoid a full design run. This proves routing intent, not that the tool completed or produced a correct design. A non-invocation trial requires a terminal `success` result with `is_error: false` and a zero exit status. Assistant text alone, an empty or malformed stream, a missing result, a timeout, and terminal or process errors cannot count as successful non-invocation.
+A trial observes invocation when the Claude Code adapter sees the target `Skill` tool request, then stops the process to avoid a full design run. This proves routing intent, not that the tool completed or produced a correct design. A non-invocation trial requires a terminal `success` result with `is_error: false` and a zero exit status. Assistant text alone, an empty or malformed stream, a missing result, a timeout, and terminal or process errors cannot count as successful non-invocation.
 
 A case passes only when every planned trial is valid and a strict majority agrees with the fixture. Any invalid trial blocks the suite, even when the other trials agree. There are no automatic retries. Preserve a failed run and start a new evaluation explicitly after diagnosing it. `expectedMode` is displayed but not graded: this evaluator does not establish generation quality, candidate selection, audit correctness, or report delivery.
 

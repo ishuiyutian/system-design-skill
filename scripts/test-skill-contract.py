@@ -6,6 +6,52 @@ import re
 from pathlib import Path
 
 
+def description_value(frontmatter_text: str) -> tuple[str, bool]:
+    """Return (description, yaml_checked).
+
+    The installer parses this field with a YAML parser, so an unquoted plain
+    scalar containing ': ' breaks installation. PyYAML is optional for
+    stdlib-only checkouts; the fallback handles the block/quoted forms this
+    repository uses and rejects exactly that failure shape.
+    """
+    try:
+        import yaml
+    except ImportError:
+        yaml = None
+    if yaml is not None:
+        data = yaml.safe_load(frontmatter_text)
+        assert isinstance(data, dict), "frontmatter must parse to a mapping"
+        value = data.get("description")
+        assert isinstance(value, str) and value.strip(), (
+            "frontmatter description must be a nonempty string"
+        )
+        return value, True
+
+    lines = frontmatter_text.splitlines()
+    start = next(
+        (index for index, line in enumerate(lines) if line.startswith("description:")),
+        None,
+    )
+    assert start is not None, "frontmatter has no description"
+    head = lines[start][len("description:"):].strip()
+    if head in (">-", ">", "|", "|-", ">+", "|+"):
+        collected = []
+        for following in lines[start + 1:]:
+            if following and not following[:1].isspace():
+                break
+            collected.append(following.strip())
+        return " ".join(part for part in collected if part), False
+    if head[:1] in ('"', "'"):
+        return head[1:].rstrip(head[0]), False
+    remainder = " ".join(
+        [head] + [line.strip() for line in lines[start + 1:] if line[:1].isspace()]
+    )
+    assert ": " not in remainder, (
+        "unquoted description contains ': ', which breaks YAML installation"
+    )
+    return remainder, False
+
+
 ROOT = Path(__file__).resolve().parents[1]
 SKILL_DIR = ROOT / "skills" / "system-design"
 PACK_LINKS = (
@@ -53,6 +99,40 @@ def main() -> None:
             failures.append(message)
 
     skill = (SKILL_DIR / "SKILL.md").read_text()
+    skill_description, _yaml_checked = description_value(frontmatter(skill))
+    check(
+        len(skill_description) <= 700,
+        f"description is {len(skill_description)} chars; keep it under 700 (hard limit 1024)",
+    )
+    check("USE for:" in skill_description, "description lacks a 'USE for:' routing block")
+    check("SKIP for:" in skill_description, "description lacks a 'SKIP for:' routing block")
+    lowered_description = skill_description.lower()
+    for group in (
+        ("repository",),
+        ("greenfield",),
+        ("sharding", "scaling"),
+        ("consistency", "datastore"),
+        ("caching",),
+        ("capacity",),
+        ("adr",),
+        ("drift", "debt"),
+        ("single choice",),
+        ("workload numbers",),
+    ):
+        check(
+            any(token in lowered_description for token in group),
+            f"description lost a routing trigger: {' or '.join(group)}",
+        )
+    for jargon in (
+        "answers in a paragraph",
+        "overengineering gates",
+        "structurally distinct",
+        "chained evidence argument",
+    ):
+        check(
+            jargon not in lowered_description,
+            f"description carries execution detail that belongs in SKILL.md: {jargon!r}",
+        )
     index = (SKILL_DIR / "ARCHETYPES.md").read_text()
     examples_path = SKILL_DIR / "EXAMPLES.md"
     check(examples_path.is_file(), "EXAMPLES.md does not exist")

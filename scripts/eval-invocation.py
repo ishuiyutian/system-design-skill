@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Grade skill discovery against a real Claude Code host, not skill execution.
+"""Grade skill discovery through one host adapter (Claude Code), not skill execution.
 
-The plugin host loads this repository in an empty git repository. Each trial
-stops at the target Skill request or waits for a successful terminal result.
-Invalid trials block the gate; attempts are never retried automatically.
-Use --output-dir NEW_DIRECTORY to retain streams and provenance.
+The fixtures are host-agnostic; this file is the Claude Code adapter. Another
+agent earns a supported-host claim only by shipping its own adapter that emits
+the same trial record. The plugin host loads this repository in an empty git
+repository. Each trial stops at the target Skill request or waits for a
+successful terminal result. Invalid trials block the gate; attempts are never
+retried automatically. Use --output-dir NEW_DIRECTORY to retain streams and
+provenance.
 """
 from __future__ import annotations
 
