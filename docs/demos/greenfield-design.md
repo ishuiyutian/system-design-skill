@@ -40,10 +40,8 @@ Three complete candidates make different structural bets:
 2. per-tier write authorities;
 3. deferred allocation with an auditable draw.
 
-The report keeps every candidate fully drawn, traces the claim and payment flows end to end, shows the schemas behind the seat, hold, order, payment, and ledger stores, and compares correctness under failure, burst absorption, fairness, cost, and operating complexity.
+The design keeps every candidate fully drawn, traces the claim and payment flows end to end with Mermaid diagrams, shows the schemas behind the seat, hold, order, payment, and ledger stores, and compares correctness under failure, burst absorption, fairness, cost, and operating complexity.
 
 ## Artifacts
 
-- [Readable design](../../examples/design-ticketing/DESIGN.md)
-- [Structured source](../../examples/design-ticketing/design.json)
-- Standalone report: `$TMPDIR/system-design-design-ticketing.html`
+- [Readable design](../../examples/design-ticketing/DESIGN.md) — the source of truth, with Mermaid structure and flow diagrams

@@ -71,7 +71,7 @@ COMPLETION_MARKERS = (
     "every candidate has a named first failure",
     "every recommendation has a falsifiable evidence chain",
     "every unresolved uncertainty is recorded as an assumption or measurement",
-    "all artifacts pass structural and render checks",
+    "all artifacts pass structural and diagram checks",
 )
 EXAMPLE_TOPICS = (
     "Scale vs skew",
@@ -83,6 +83,17 @@ EXAMPLE_TOPICS = (
     "Cache freshness vs correctness",
     "Architecture candidate vs database substitution",
 )
+
+
+def mermaid_kind(block: str) -> str:
+    head = block.lstrip().split(None, 1)[0] if block.strip() else ""
+    if head.startswith("C4"):
+        return "c4"
+    if head in {"flowchart", "graph"}:
+        return "flowchart"
+    if head == "sequenceDiagram":
+        return "sequence"
+    return head or "empty"
 
 
 def frontmatter(text: str) -> str:
@@ -191,6 +202,8 @@ def main() -> None:
         and "no executable ddl" in skill.lower()
     )
     check(schema_language, "SKILL.md does not require intuitive non-executable database schemas")
+    check("Diagram kind:" in skill, "SKILL.md does not require recording the diagram kind")
+    check("ask the user" in skill.lower(), "SKILL.md does not allow asking the user to choose a diagram kind")
     audit_path = SKILL_DIR / "AUDIT.md"
     check(audit_path.is_file(), "AUDIT.md does not exist")
     if audit_path.is_file():
@@ -235,15 +248,101 @@ def main() -> None:
         for banned in ("debt score", "debt index", "remediation hours"):
             check(banned not in audit.lower(), f"AUDIT.md reintroduces a rejected measure: {banned}")
 
-    report = (SKILL_DIR / "HTML-REPORT.md").read_text()
-    check('"debt"' in report, "HTML-REPORT.md does not document the debt register")
-    check("#debt" in report, "HTML-REPORT.md does not list the debt tab")
-    for term in ("finding", "debt", "severity", "remedy", "evidence"):
-        check(term in report.split("## Vocabulary")[-1],
-              f"HTML-REPORT.md vocabulary omits {term!r}")
+    design_format_path = SKILL_DIR / "DESIGN-FORMAT.md"
+    check(design_format_path.is_file(), "DESIGN-FORMAT.md does not exist")
+    if design_format_path.is_file():
+        design_format = design_format_path.read_text()
+        check(
+            "](SKILL.md)" in "\n".join(design_format.splitlines()[:5]),
+            "DESIGN-FORMAT.md does not backlink SKILL.md in its opening lines",
+        )
+        lowered_format = design_format.lower()
+        for phrase in (
+            "DESIGN.md is the source of truth",
+            "one diagram kind for the whole design",
+            "Diagram kind:",
+            "ask the user",
+            "C4 structure",
+            "flowchart",
+            "sequence",
+            "the debt register",
+        ):
+            check(
+                phrase.lower() in lowered_format,
+                f"DESIGN-FORMAT.md lacks required contract language: {phrase!r}",
+            )
+        for term in ("finding", "debt", "severity", "remedy", "evidence"):
+            check(
+                term in design_format.split("## Vocabulary")[-1],
+                f"DESIGN-FORMAT.md vocabulary omits {term!r}",
+            )
+
+    for forbidden in (
+        SKILL_DIR / "HTML-REPORT.md",
+        SKILL_DIR / "RUNTIME.md",
+        SKILL_DIR / "scripts" / "render_report.py",
+        SKILL_DIR / "scripts" / "design_session.py",
+        SKILL_DIR / "assets" / "report-template.html",
+    ):
+        check(
+            not forbidden.exists(),
+            f"obsolete artifact still present: {forbidden.relative_to(ROOT)}",
+        )
+    for filename in ("SKILL.md", "DESIGN-FORMAT.md", "HEURISTICS.md", "AUDIT.md"):
+        text = (SKILL_DIR / filename).read_text().lower()
+        for banned in ("render_report", "report-template", "design_session", "runtime.md", "html-report.md"):
+            check(banned not in text, f"{filename} still references removed artifact: {banned}")
+
+    example = ROOT / "examples" / "design-ticketing" / "DESIGN.md"
+    check(example.is_file(), "example DESIGN.md does not exist")
+    if example.is_file():
+        example_text = example.read_text()
+        for heading in (
+            "## Requirements",
+            "## Core entities and invariants",
+            "## Data and consistency model",
+            "## Database schemas",
+            "## System interfaces",
+            "## Estimates",
+            "## Architectures",
+            "## Comparison and recommendation",
+            "## Critical deep dives",
+            "## Operations and rollout",
+            "## Risks and what breaks first",
+            "## Measurements that could overturn the decision",
+            "## Next steps",
+            "## Notes",
+        ):
+            check(f"{heading}\n" in example_text, f"example DESIGN.md lacks {heading}")
+        blocks = re.findall(r"```mermaid\n(.*?)```", example_text, re.DOTALL)
+        check(bool(blocks), "example DESIGN.md has no Mermaid diagram")
+        kinds = {mermaid_kind(block) for block in blocks}
+        check(
+            len(kinds) == 1,
+            f"example DESIGN.md mixes diagram kinds: {sorted(kinds)}",
+        )
+        recorded = re.search(r"(?m)^Diagram kind:\s*(.+?)\s*$", example_text)
+        check(bool(recorded), "example DESIGN.md does not record its diagram kind")
+        if recorded:
+            value = recorded.group(1).strip().lower()
+            expected = {
+                "c4": "c4",
+                "c4 structure": "c4",
+                "flowchart": "flowchart",
+                "sequence": "sequence",
+            }.get(value)
+            check(
+                expected is not None,
+                f"example DESIGN.md records an unknown diagram kind: {recorded.group(1)!r}",
+            )
+            if expected is not None:
+                check(
+                    kinds == {expected},
+                    f"example records {value!r} but uses {sorted(kinds)}",
+                )
 
     completion_match = re.search(
-        r"A design is complete only when:\n\n(.*?)(?=\n\nBefore rendering, verify:)",
+        r"A design is complete only when:\n\n(.*?)(?=\n\nBefore writing, verify:)",
         skill,
         re.DOTALL,
     )

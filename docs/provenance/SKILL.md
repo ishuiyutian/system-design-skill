@@ -1,6 +1,6 @@
 # Provenance — System Design
 
-Sources for changed process contracts in [SKILL.md](../../skills/system-design/SKILL.md). Mechanism provenance lives in [HEURISTICS.md](HEURISTICS.md), [AUDIT.md](AUDIT.md), and [RUNTIME.md](RUNTIME.md).
+Sources for changed process contracts in [SKILL.md](../../skills/system-design/SKILL.md). Mechanism provenance lives in [HEURISTICS.md](HEURISTICS.md), [AUDIT.md](AUDIT.md), and [DESIGN-FORMAT.md](DESIGN-FORMAT.md).
 
 ## Route the ask
 
@@ -15,7 +15,7 @@ Sources for changed process contracts in [SKILL.md](../../skills/system-design/S
 | Claim | Source |
 |---|---|
 | Unchanged HEAD does not identify staged, unstaged, or untracked working-tree bytes | Git working-tree/index/commit distinction; runtime hashes the actual scoped source bytes. |
-| Installed local runtime maintains tracked investigation state and explicit recovery | [RUNTIME provenance](RUNTIME.md); selected product design. |
+| `DESIGN.md` is the working document from the first step, so a later session resumes by reading the file rather than a separate store | Product decision: one source of truth, no generated copy. |
 
 ### 2. Establish the current truth
 
@@ -29,8 +29,8 @@ Sources for changed process contracts in [SKILL.md](../../skills/system-design/S
 |---|---|
 | Finder and verifier are fallible; uncertainty is neither confirmation nor refutation | [Audit pipeline provenance](AUDIT.md#the-pipeline). |
 
-### 9. Write, render, and verify
+### 9. Write and verify
 
 | Claim | Source |
 |---|---|
-| Structural validation, semantic review, and browser inspection establish distinct properties | [Evidence lifecycle](HEURISTICS.md#evidence-and-uncertainty); report diagnostics only inspect rendering. |
+| Structural validation, semantic review, and diagram rendering establish distinct properties | [Evidence lifecycle](HEURISTICS.md#evidence-and-uncertainty); diagram rendering only inspects presentation. |

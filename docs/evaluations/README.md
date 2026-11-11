@@ -10,7 +10,7 @@ The fixtures describe routing intent, not a vendor. `scripts/eval-invocation.py`
 
 A trial observes invocation when the Claude Code adapter sees the target `Skill` tool request, then stops the process to avoid a full design run. This proves routing intent, not that the tool completed or produced a correct design. A non-invocation trial requires a terminal `success` result with `is_error: false` and a zero exit status. Assistant text alone, an empty or malformed stream, a missing result, a timeout, and terminal or process errors cannot count as successful non-invocation.
 
-A case passes only when every planned trial is valid and a strict majority agrees with the fixture. Any invalid trial blocks the suite, even when the other trials agree. There are no automatic retries. Preserve a failed run and start a new evaluation explicitly after diagnosing it. `expectedMode` is displayed but not graded: this evaluator does not establish generation quality, candidate selection, audit correctness, or report delivery.
+A case passes only when every planned trial is valid and a strict majority agrees with the fixture. Any invalid trial blocks the suite, even when the other trials agree. There are no automatic retries. Preserve a failed run and start a new evaluation explicitly after diagnosing it. `expectedMode` is displayed but not graded: this evaluator does not establish generation quality, candidate selection, audit correctness, or document delivery.
 
 The plugin host uses an empty Git repository, this repository's plugin, and project-only settings. The user host deliberately uses the caller's setup. Record the host when comparing results. Model aliases and provider behavior can change; repeated trials are samples, not a reliability guarantee.
 

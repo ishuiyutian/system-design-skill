@@ -35,12 +35,10 @@ Once the recommendation was settled, it audited the system it had started from �
 
 ## Artifacts
 
-Every run writes the same three, beside each other. In repository mode the debt findings live inside `design.json`, which makes it the register where an accepted finding stays accepted, and they render on their own tab:
+Every run writes one document. In repository mode the debt findings live inside `DESIGN.md`, which makes it the register where an accepted finding stays accepted:
 
-- `docs/design/<slug>/DESIGN.md` — the readable design
-- `docs/design/<slug>/design.json` — the structured source of truth
-- `$TMPDIR/system-design-<slug>.html` — the standalone report
+- `docs/design/<slug>/DESIGN.md` — the design document and the source of truth, with Mermaid architecture and flow diagrams
 
-See [examples/design-ticketing](../../examples/design-ticketing/DESIGN.md) for a complete pair.
+See [examples/design-ticketing](../../examples/design-ticketing/DESIGN.md) for a complete example.
 
-Run `/system-design` again with feedback and it resumes from the JSON instead of surveying the repository again.
+Run `/system-design` again with feedback and it resumes from `DESIGN.md` instead of surveying the repository again.

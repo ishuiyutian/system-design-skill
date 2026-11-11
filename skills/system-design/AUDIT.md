@@ -1,10 +1,10 @@
 # Debt audit
 
-The audit protocol [SKILL.md](SKILL.md) runs at **Audit the architecture for debt**, after the recommendation is settled and before anything is rendered. It runs that late because a finding's exposure is measured against the candidate the run recommends, which does not exist until then. Repository mode only: an audit needs an implemented architecture to compare against, and greenfield has none.
+The audit protocol [SKILL.md](SKILL.md) runs at **Audit the architecture for debt**, after the recommendation is settled and before the design document is finalized. It runs that late because a finding's exposure is measured against the candidate the run recommends, which does not exist until then. Repository mode only: an audit needs an implemented architecture to compare against, and greenfield has none.
 
 The subject is the gap between the architecture that is intended and the architecture that exists. Reusable mechanisms and decision ladders stay in [HEURISTICS.md](HEURISTICS.md); this file owns only what it takes to find, disprove, and record a finding.
 
-**This is a survey, not a rescue.** It reports; it never edits. Every remedy is a proposal for a later session to accept, reject, or schedule, and a repository deep in debt will get real findings without getting a way out of the mud. Say so in the report, so nobody reads a list of findings as a plan of record.
+**This is a survey, not a rescue.** It reports; it never edits. Every remedy is a proposal for a later session to accept, reject, or schedule, and a repository deep in debt will get real findings without getting a way out of the mud. Say so in the design document, so nobody reads a list of findings as a plan of record.
 
 ## Contents
 
@@ -50,7 +50,7 @@ Stages pass conclusions, never arguments. A stage that reads the previous stage'
 | 4 | **Re-derive** | every survivor | severity recomputed from what was verified |
 | 5 | **Remedy** | every survivor | the action, its cost, which candidates resolve it, and whether it can be undone |
 | 6 | **Merge** | always | the prior run joined in, baseline states set |
-| 7 | **Record** | always | the `debt` object, including what could not be established |
+| 7 | **Record** | always | the debt register, including what could not be established |
 
 Only stages 1 to 3 carry the argument; the rest is reading, a lookup, and bookkeeping. Spend the budget on generating findings per category and then trying to destroy them.
 
@@ -65,7 +65,7 @@ Only stages 1 to 3 carry the argument; the rest is reading, a lookup, and bookke
 | **Unstated** refuted | Drop `confidence` one level, and the objection becomes the finding's disconfirming line | Whether a trade-off is adequately stated is a judgement, and a wrong deletion is invisible |
 | **Live** refuted | Set `exposure` to `off-path` | Change history is a proxy, so this lowers the finding rather than removing it — and an untouched component on the primary flow can still break |
 
-**Unknown is a separate outcome.** When a check cannot decide, set `gates.real` or `gates.live` to `"unknown"` for a gate, or a lens’s `refuted` to `null`. In `debt.unverified`, put the candidate id and check name in `check`, and the missing evidence plus next probe in `reason`, so the report exposes both. Unknown Real or Uncovered checks defer a new candidate; they do not confirm it or delete it as false. If Live cannot establish either exposure value, defer a new candidate rather than inventing an axis for the severity lookup. For a prior finding, retain its exposure as historical, mark verification unknown, and explain that the old severity was not re-established. Only explicit `refuted: false` counts toward survived refutation attempts. A missing legacy verdict means not established.
+**Unknown is a separate outcome.** When a check cannot decide, set `gates.real` or `gates.live` to `"unknown"` for a gate, or a lens’s `refuted` to `null`. In the unverified list, put the candidate id and check name in `check`, and the missing evidence plus next probe in `reason`, so the design document exposes both. Unknown Real or Uncovered checks defer a new candidate; they do not confirm it or delete it as false. If Live cannot establish either exposure value, defer a new candidate rather than inventing an axis for the severity lookup. For a prior finding, retain its exposure as historical, mark verification unknown, and explain that the old severity was not re-established. Only explicit `refuted: false` counts toward survived refutation attempts. A missing legacy verdict means not established.
 
 Deletion is silent, survival is visible: reserve it for the two verdicts that make a finding factually wrong, and let the reader adjudicate the rest.
 
@@ -117,7 +117,7 @@ The framing each stage runs under is load-bearing: a verification prompt that op
 
 ## Categories and patterns
 
-Seven categories, closed. The category is the grouping axis, in the artifact and in the report; the pattern is the rule. Components are carried on every finding and drive filtering, not grouping — a finding names as many components as it spans, so grouping by component would either duplicate it or force an arbitrary choice of one. Where a finding genuinely affects several characteristics, name one category and list the rest under `affects` using the ratings axes in [HTML-REPORT.md](HTML-REPORT.md#designjson-schema) — forcing a multi-quality problem into a single bucket loses the part that was not chosen, and loses it silently.
+Seven categories, closed. The category is the grouping axis in the design document; the pattern is the rule. Components are carried on every finding and drive filtering, not grouping — a finding names as many components as it spans, so grouping by component would either duplicate it or force an arbitrary choice of one. Where a finding genuinely affects several characteristics, name one category and list the rest under `affects` using the ratings axes in [DESIGN-FORMAT.md](DESIGN-FORMAT.md#trade-offs-migration-and-ratings) — forcing a multi-quality problem into a single bucket loses the part that was not chosen, and loses it silently.
 
 Every pattern carries a **Not when** clause. Without one a signature gets matched against a system it does not fit, and the audit spends its credibility on a design that was right.
 
@@ -218,7 +218,7 @@ Rules that keep the scale honest:
 - `blocking` must cite the specific invariant or non-functional target it violates, by id. A finding that cannot name one is not blocking, whatever it feels like.
 - Confidence is shown beside severity and never folded into it. A `blocking` finding held with low confidence sorts below a `blocking` one held with high.
 - Do not add a fifth level. Two axes give four cells; a fifth level would have no rule behind it.
-- Say in the report what this scale does and does not do: four cells buy agreement and cheap communication at the cost of resolution, and they do not rank-order the findings inside a cell.
+- Say in the design document what this scale does and does not do: four cells buy agreement and cheap communication at the cost of resolution, and they do not rank-order the findings inside a cell.
 
 ## Suppressions
 
@@ -270,18 +270,18 @@ Version the scheme and keep `aliases` per finding. When the scheme changes, matc
 
 The merge, in order:
 
-1. Read the prior `design.json` and index every finding by its id **and** every alias.
+1. Read the prior `DESIGN.md` and index every finding by its id **and** every alias.
 2. Run stage 1 without showing it that index.
 3. Join this run's findings to the prior ones.
 4. Set `baselineState`: `unchanged` when nothing material moved, `updated` when severity, components, or remedy changed, `new` when unmatched, `absent` for a prior finding with no match after the relevant checks completed. If unavailable or stale evidence prevented those checks, retain the prior finding and its human decisions, mark `baselineState: updated`, set affected verification to unknown, and link an unverified check. Do not label missing coverage as disappearance.
 5. Carry forward, never regenerate: `status`, `justification`, `acceptedUntil`, `firstSeen`, `aliases`. These record human decisions, and a re-run must never silently reopen an accepted finding.
 6. Regenerate freely: title, consequence prose, remedy text, evidence, blast radius, disconfirming line.
-7. Keep `absent` findings for one further run, shown in a collapsed section. A finding that disappeared is at least as likely to have been missed as fixed, and one run of visibility lets a human decide which. Drop them after that.
+7. Keep `absent` findings for one further run, in their own subsection. A finding that disappeared is at least as likely to have been missed as fixed, and one run of visibility lets a human decide which. Drop them after that.
 8. On the first run, omit `baselineState` from every finding rather than marking them all new — it is present on all findings or on none.
 
 ## Recording the audit
 
-Write the `debt` object into `design.json` before rendering; the schema is in [HTML-REPORT.md](HTML-REPORT.md). It is the debt register, and it is the only place an acceptance can persist.
+Write the Architectural debt section into `DESIGN.md` before final verification; the format is in [DESIGN-FORMAT.md](DESIGN-FORMAT.md#the-debt-register). It is the debt register, and it is the only place an acceptance can persist.
 
 Three things belong there beyond the findings themselves.
 
@@ -293,8 +293,8 @@ Three things belong there beyond the findings themselves.
 
 The disconfirming line is the strongest objection the red team actually raised and the finding survived. It is not a self-authored counterargument: the agent that raised a finding writes a weak case against it, and a weak case against it is worse than none.
 
-State the audit's own limits in the report, in its own voice. Two of them, both load-bearing:
+State the audit's own limits in the design document, in its own voice. Two of them, both load-bearing:
 
-**A finding that reappears is matched reliably. The set itself is not stable.** Run twice, get a different list — the identity scheme fixes what happens to a finding that returns, and promises nothing about which findings return. A report that claims completeness it does not have costs more than the findings are worth.
+**A finding that reappears is matched reliably. The set itself is not stable.** Run twice, get a different list — the identity scheme fixes what happens to a finding that returns, and promises nothing about which findings return. A design document that claims completeness it does not have costs more than the findings are worth.
 
 **This does not converge, and it is not meant to be looped.** A pass is a list of leads. Acting on the ones with a citation behind them and stopping is the intended use; running it repeatedly until it comes back clean is not, because it will not. Where a run genuinely found little, the severities say so — a page of `low` is the audit reporting a quiet system in the only way it has.

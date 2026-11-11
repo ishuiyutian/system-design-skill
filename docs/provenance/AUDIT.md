@@ -246,7 +246,6 @@ own, not borrowed.
 | Suppressed items are shown as suppressed rather than omitted, so they remain searchable and auditable | Datadog Code Security · https://docs.datadoghq.com/security/code_security/static_analysis/ |
 | Accepting an item should state what accepting it costs, not merely record a dismissal | SonarQube 10.4 release notes · https://www.sonarsource.com/products/sonarqube/whats-new/sonarqube-10-4/ |
 | Triage reasons reduce in practice to false positive, acceptable risk, and no time | Semgrep PR-comment triage verbs · https://semgrep.dev/docs/ |
-| Failing items are always visible; only passed, warning, manual and not-applicable groups collapse, each with a count | Lighthouse report renderer · https://github.com/GoogleChrome/lighthouse/blob/main/report/renderer/category-renderer.js |
 | A short description should be a single sentence understandable on one line, because a viewer with limited space will truncate the long one | SARIF v2.1.0 errata01 §3.49.9–3.49.10 |
 | Rules get renamed, and the alias mechanism belongs in the schema from the start | ibid. §3.49.4, §3.49.6, §3.49.8 |
 | Tools cannot detect structural and architectural debt, so equating debt with what a tool finds leaves large amounts unrecorded — the reason `checked` and the unverified list are written | Kruchten, Nord & Ozkaya, IEEE Software 29(6) 2012 |

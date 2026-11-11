@@ -2,9 +2,7 @@
 
 **System design from evidence, not vibes.**
 
-`/system-design` takes you from an incomplete idea or an existing codebase to a defensible architecture decision. It sizes the ask before it starts, and answers small or already-settled questions directly instead of manufacturing a document. When the decision earns the process, it discovers what the repository already proves, asks you only for the requirements it cannot recover, derives the system’s entities, invariants, interfaces, data and consistency model, scale envelope, and critical flows, then fully draws only the candidate architectures the evidence leaves viable. It compares their strengths and weaknesses and recommends one. In an existing repository it also audits what was built against what was intended, and reports the architectural debt between them with a remedy and the evidence behind each finding. Outputs a self-contained single-page HTML report, a structured `design.json` source of truth, and a durable `DESIGN.md` that records the reasoning and can be resumed in future agent sessions. Designs with structured persistence include intuitive database schemas—essential fields, keys, relationships, and indexes—rather than executable DDL.
-
-![A complete system architecture fitted inside the generated HTML report, with conventional component shapes and a permanent flow sidebar](docs/assets/system-design-report.png)
+`/system-design` takes you from an incomplete idea or an existing codebase to a defensible architecture decision. It sizes the ask before it starts, and answers small or already-settled questions directly instead of manufacturing a document. When the decision earns the process, it discovers what the repository already proves, asks you only for the requirements it cannot recover, derives the system’s entities, invariants, interfaces, data and consistency model, scale envelope, and critical flows, then fully draws only the candidate architectures the evidence leaves viable. It compares their strengths and weaknesses and recommends one. In an existing repository it also audits what was built against what was intended, and reports the architectural debt between them with a remedy and the evidence behind each finding. Outputs one durable `DESIGN.md` that records the reasoning and can be resumed in future agent sessions, with Mermaid architecture and flow diagrams. Designs with structured persistence include intuitive database schemas—essential fields, keys, relationships, and indexes—rather than executable DDL.
 
 ## Installation
 
@@ -74,7 +72,7 @@ Repository work is the primary path. Greenfield work uses the same process witho
 
 ### 1. Sizes the ask before running the process
 
-The process is expensive, so the skill spends it only where it pays. It sketches the envelope first and checks it against the anti-overengineering gates. If the ask lands below them, or a recorded decision already forces the answer, the skill names the gate or the decision and answers directly in a paragraph — no report, no `design.json`, no `DESIGN.md`.
+The process is expensive, so the skill spends it only where it pays. It sketches the envelope first and checks it against the anti-overengineering gates. If the ask lands below them, or a recorded decision already forces the answer, the skill names the gate or the decision and answers directly in a paragraph — no artifact is written.
 
 When the process does run, the skill starts with the simplest production-viable candidate. It draws another only when the envelope and invariants leave a genuinely different structure viable on a load-bearing axis. Closed alternatives remain one-line rejections; three is a ceiling, not a target.
 
@@ -151,9 +149,9 @@ Where the difficulty lives here rather than in the component graph — collabora
 
 ### 7. Constructs the candidate architectures
 
-A run fully draws the simplest production-viable candidate. It adds a directly comparable candidate only when that candidate survives the envelope and invariants and changes a load-bearing structural, data-model, consistency, cost, or operability axis. An option closed by a requirement, gate, or failure mode remains a one-line rejection instead of a report tab. Three candidates is the ceiling.
+A run fully draws the simplest production-viable candidate. It adds a directly comparable candidate only when that candidate survives the envelope and invariants and changes a load-bearing structural, data-model, consistency, cost, or operability axis. An option closed by a requirement, gate, or failure mode remains a one-line rejection instead of a peer section. Three candidates is the ceiling.
 
-Each drawn candidate includes its complete clients, networking, compute, state, queues, external dependencies, connections, flows, operational behavior, migration cost, advantages, and weaknesses. Swapping one database does not count as a different architecture; swapping the ordering authority or the conflict-resolution model does.
+Each drawn candidate includes its complete clients, networking, compute, state, queues, external dependencies, connections, flows, operational behavior, migration cost, advantages, and weaknesses. The design chooses one diagram kind—C4 structure, flowchart, or sequence—from context, records why, and uses only that kind; tables carry what the kind cannot show. Swapping one database does not count as a different architecture; swapping the ordering authority or the conflict-resolution model does.
 
 After the envelope identifies the protected invariant, the skill loads only the matching archetype pack. It composes packs only for independent invariants and never loads the full pattern catalog by default.
 
@@ -172,45 +170,39 @@ The highest-pressure decisions receive deeper treatment, including:
 - what breaks first;
 - the measurement that would overturn the recommendation.
 
-A run is complete only when critical flows reach named final effects, invariants and ownership are explicit, dependencies and authoritative stores carry bounded failure/recovery contracts, candidates name what fails first, and the recommendation is falsifiable. Unresolved facts remain visible assumptions or measurements, and artifacts must pass structural and render checks.
+A run is complete only when critical flows reach named final effects, invariants and ownership are explicit, dependencies and authoritative stores carry bounded failure/recovery contracts, candidates name what fails first, and the recommendation is falsifiable. Unresolved facts remain visible assumptions or measurements, and artifacts must pass structural and diagram checks.
 
 ### 9. Audits the architecture that already exists
 
 Repository runs end by grading the system they started from. The audit compares the implemented architecture against the one the repository says it intended — the recorded design and the accepted ADRs — and reports where the two have come apart.
 
-A finding is not raised because something looks unusual. It has to name what it costs, cite the file or decision it rests on, and survive an attempt to disprove it: a model is an unreliable detector of architectural problems and a reliable disprover of them, so findings are generated cheaply and then have to get past verifiers that never see the argument that produced them. The strongest objection a finding survived is printed beside it.
+A finding is not raised because something looks unusual. It has to name what it costs, cite the file or decision it rests on, and survive an attempt to disprove it: a model is an unreliable detector of architectural problems and a reliable disprover of them, so findings are generated cheaply and then have to get past verifiers that never see the argument that produced them. The strongest objection a finding survived is recorded beside it.
 
 Each one carries a remedy — cut, consolidate, extract, replace, isolate, or document — with what it costs and whether it can be undone. Severity is looked up from two recorded axes rather than chosen, so you can disagree with an input instead of a verdict. Nothing is scored, and nothing is estimated in hours: those numbers have no calibration behind them.
 
 Greenfield runs skip this entirely. There is no implemented architecture to audit.
 
-### 10. Produces the report and durable design
+### 10. Produces the design document
 
-The skill writes the structured source first, generates the Markdown design from it, and renders the standalone report.
+The skill writes and verifies a single `DESIGN.md`. It carries:
 
-The HTML opens with the entire architecture fitted in view. Each candidate remains fully drawn on its own tab. You can:
+- one recorded diagram kind for the whole design, chosen from C4 structure, flowchart, or sequence, with the reason and the agent's user-escalation rule;
+- diagrams of that one kind for the candidates and the critical flows that earn one;
+- tables for components, dependency contracts, schemas, interfaces, estimates, and ratings;
+- the investigation register and, in repository mode, the debt findings with their evidence and remedies.
 
-- scroll or pinch to zoom and drag the empty canvas to pan;
-- use `−`, `+`, or `Fit` for direct viewport control;
-- select a flow from the permanent right sidebar to trace every numbered step;
-- click a component to inspect its responsibility, technology, connections, and flows;
-- compare every candidate and its trade-offs without leaving the page;
-- read the debt findings on their own tab, grouped by category, filtered by severity or component, and linkable one at a time.
-
-The report is self-contained and makes no network requests. Copy it, email it, or open it directly in any browser.
+The document is the source of truth. It is plain Markdown with Mermaid blocks, so it renders in GitHub, VS Code, and Obsidian, and a later agent session can resume from it directly.
 
 ## What appears on disk
 
 | Artifact | Purpose |
 |---|---|
-| `docs/design/<slug>/design.json` | Source of truth for requirements, estimates, components, flows, candidates, and the recommendation — and, in repository mode, the debt register, where a finding you have accepted stays accepted across runs |
-| `docs/design/<slug>/DESIGN.md` | Durable design document for humans and future agent sessions |
-| `${TMPDIR:-/tmp}/system-design-<slug>.html` | Self-contained interactive report, regenerated from `design.json`; `--out` overrides the path |
+| `docs/design/<slug>/DESIGN.md` | The design document and the source of truth: requirements, investigation records, estimates, diagrams, candidates, the recommendation, and, in repository mode, the debt register where an accepted finding stays accepted across runs |
 | `docs/adr/NNNN-<slug>.md` | Offered in repository mode once you pick a winner, so future sessions do not re-litigate it |
 
-Outside a Git repository, `design.json` and `DESIGN.md` are written under `./<slug>/`. When the ask lands below the anti-overengineering gates, nothing is written at all — you get the answer and the gate that closed it.
+Outside a Git repository, `DESIGN.md` is written under `./<slug>/`. When the ask lands below the anti-overengineering gates, nothing is written at all — you get the answer and the gate that closed it.
 
-Run `/system-design` again for the same system and it resumes from `design.json` instead of restarting discovery. Rendered HTML is always generated from the JSON and is never the source of truth.
+Run `/system-design` again for the same system and it resumes from `DESIGN.md` instead of restarting discovery.
 
 ## What the skill will not do
 
@@ -220,26 +212,14 @@ Run `/system-design` again for the same system and it resumes from `design.json`
 - Recommend distributed machinery without a number, invariant, or failure mode that earns it.
 - Present one preferred design and two incomplete straw men.
 - Treat caches, indexes, or queues as authoritative without saying so.
-- Hand-edit the rendered HTML instead of updating the design source.
+- Write a second design source or a generated report behind the document.
 - Score architectural debt, or estimate remediation in hours or currency.
 - Raise a finding it cannot evidence, or one a recorded decision already settles.
 - Recommend a rewrite. Remedies are incremental, and work that is not gets scheduled and named as such.
 
-## Durable investigation tools
-
-The installed skill includes a Python standard-library CLI; no service, model SDK, or MCP setup is required. Your coding agent still investigates and reasons. The tools preserve evidence, questions, unknowns, and checks inside tracked `design.json`, with tracked JSON checkpoints alongside it.
-
-```bash
-python3 <skill-dir>/scripts/design_session.py status --design docs/design/example/design.json --root .
-```
-
-Use the returned SHA for explicit initialization or subsequent mutations. See [runtime commands and recovery](skills/system-design/RUNTIME.md). Stale writes are rejected; changed source bytes invalidate dependent successful records. A corrupt document can be recovered from an explicitly selected verified checkpoint without silently restoring old approvals. Locking covers cooperating CLI writers; do not edit the same design concurrently with a runtime mutation.
-
-New reports display evidence freshness, unresolved questions, and check results. Older reports remain readable and explicitly show that investigation coverage was not recorded. Structural validation does not certify architectural correctness or substitute for browser inspection. [Research and limits](docs/research/2026-10-21-harness-lessons.md).
-
 ## How it is built
 
-The skill is plain Markdown plus a self-contained report renderer:
+The skill is plain Markdown; it ships no runtime, renderer, or generated report:
 
 | File | Responsibility |
 |---|---|
@@ -247,15 +227,11 @@ The skill is plain Markdown plus a self-contained report renderer:
 | [`INTERVIEW.md`](skills/system-design/INTERVIEW.md) | Requirements frontier and question protocol |
 | [`HEURISTICS.md`](skills/system-design/HEURISTICS.md) | Decision rules, capacity references, and comparison characteristics |
 | [`ARCHETYPES.md`](skills/system-design/ARCHETYPES.md) | Canonical system patterns and failure modes |
-| [`HTML-REPORT.md`](skills/system-design/HTML-REPORT.md) | `design.json` schema and output contract |
+| [`DESIGN-FORMAT.md`](skills/system-design/DESIGN-FORMAT.md) | The `DESIGN.md` contract, investigation register, one-kind diagram choice, and debt register |
 | [`EXAMPLES.md`](skills/system-design/EXAMPLES.md) | Conditional BAD/GOOD contrasts for making a generic first draft operationally specific |
-| [`RUNTIME.md`](skills/system-design/RUNTIME.md) | Bundled CLI contracts, tracked evidence, checkpoints, and recovery |
-| [`scripts/design_session.py`](skills/system-design/scripts/design_session.py) | Local investigation commands; uses the existing coding host for reasoning |
 | [`AUDIT.md`](skills/system-design/AUDIT.md) | Debt taxonomy, the verification pipeline, and the findings that must not be raised |
-| [`assets/report-template.html`](skills/system-design/assets/report-template.html) | Interactive renderer with no runtime dependencies |
-| [`scripts/render_report.py`](skills/system-design/scripts/render_report.py) | Injects `design.json` into the template |
 
-Everything is inspectable and editable. The renderer runs locally and sends no repository or design data to a service.
+Everything is inspectable and editable. The skill sends no repository or design data to a service; investigation freshness is a judgment from the current read rather than a byte-hash checkpoint. [Research and limits](docs/research/2026-10-21-harness-lessons.md).
 
 Whether an agent reaches for the skill is decided by its description alone. The portable gate is the host-agnostic [`scripts/test-skill-contract.py`](scripts/test-skill-contract.py); live discovery is per-host evidence, and [`scripts/eval-invocation.py`](scripts/eval-invocation.py) is one Claude Code adapter. It sends each prompt in [`docs/evaluations/invocation-cases.json`](docs/evaluations/invocation-cases.json) to a headless Claude Code session that loads only this plugin, and reports which prompts invoked the skill:
 

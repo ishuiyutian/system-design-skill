@@ -2,14 +2,12 @@
 
 ## What this package contains
 
-`system-design-skill` is an instruction and local-report package:
+`system-design-skill` is an instruction-only package:
 
 - one Agent Skill under `skills/system-design/`;
-- Markdown reference files;
-- one self-contained HTML/SVG report template;
-- one optional local renderer test.
+- Markdown reference files only — no runtime, renderer, network client, or install-time script.
 
-It does not ship an MCP server, hooks, background agents, network clients, executable plugin commands, or install-time scripts. The generated HTML report makes no network requests.
+It does not ship an MCP server, hooks, background agents, executable plugin commands, or install-time scripts. It writes one Markdown design document and makes no network requests.
 
 ## Review before installation
 
@@ -19,16 +17,15 @@ For this package, the primary files to inspect are:
 
 - [`skills/system-design/SKILL.md`](skills/system-design/SKILL.md)
 - [`skills/system-design/INTERVIEW.md`](skills/system-design/INTERVIEW.md)
+- [`skills/system-design/DESIGN-FORMAT.md`](skills/system-design/DESIGN-FORMAT.md)
 - [`skills/system-design/AUDIT.md`](skills/system-design/AUDIT.md) — the one step that may delegate to subagents or reach for a network lookup
-- [`skills/system-design/HTML-REPORT.md`](skills/system-design/HTML-REPORT.md)
-- [`skills/system-design/assets/report-template.html`](skills/system-design/assets/report-template.html)
 - [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json)
 
 Pin production or team installations to a tagged release when reproducibility matters.
 
 ## Data handling
 
-The skill reads repository files through the permissions of the host coding agent. It writes design artifacts inside the current repository and a rendered HTML file under the operating system’s temporary directory. It does not transmit repository contents or generated designs to a service.
+The skill reads repository files through the permissions of the host coding agent. It writes a `DESIGN.md` document inside the current repository. It does not transmit repository contents or generated designs to a service.
 
 The debt audit is the one step that may ask the host agent to look something up. It is confined to the `obsolescence` category — whether a dependency is abandoned, whether a version is superseded — and sends only a package, version, or technique name, never the design, the topology, or the code. The skill itself opens no connection, and the audit completes with no network available; those findings then carry low confidence and name the lookup they could not make.
 

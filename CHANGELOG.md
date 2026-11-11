@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here.
 
+## 2.0.0 — 2026-11-11
+
+### Breaking
+
+- `DESIGN.md` is now the only design artifact and the source of truth. The skill no longer writes `design.json`, an HTML report, or a generated copy. Existing `design.json` files are read-only migration inputs.
+- The bundled investigation CLI and report renderer are removed. A run writes and verifies the Markdown document directly; evidence freshness is re-read and recorded in the document rather than enforced by byte hashes and checkpoints.
+
+### Added
+
+- `DESIGN-FORMAT.md` replaces `HTML-REPORT.md` as the document contract: frontmatter, section order, investigation register, component and contract tables, debt register, and verification.
+- One diagram kind per design, chosen by the agent from context and recorded with a reason. The agent picks C4 structure, flowchart, or sequence, asks the user only when two are genuinely tied, and uses only that kind; tables carry what the kind cannot express.
+- The ticketing example is rewritten in the new format with one recorded diagram kind and all diagrams in that kind.
+
+### Removed
+
+- `skills/system-design/scripts/` (`design_session.py`, `render_report.py`, `session_runtime/`), `assets/report-template.html`, and `RUNTIME.md`.
+- `scripts/test-design-session.py`, `scripts/test-report-renderer.py`, and `scripts/test-report-utf8.py`.
+- `examples/design-ticketing/design.json` and the HTML report screenshot.
+
 ## 1.4.1 — 2026-11-09
 
 ### Added

@@ -2,6 +2,7 @@
 date: 2026-07-31
 mode: greenfield
 status: draft
+decided: null
 ---
 
 # Design a high-demand ticket on-sale
@@ -11,6 +12,41 @@ status: draft
 A ticketing platform for one 60,000-seat venue on-sale across 6 price tiers. Two million fans arrive in the first 60 seconds against a seat writer measured at 300 seat-state transitions per second, holds last 10 minutes, and payment authorization and its webhook are slow, duplicated, and out of order. Zero double-sales, no overbooking, and no fan charged without a seat. Platform-wide the system is tiny — 40 million tickets a year is 2.54 transitions per second — so the whole problem is a burst around an immovable writer with money crossing a third-party boundary.
 
 Constraints: the 300 transitions/s seat writer is a measurement, not a target, and no candidate may assume it moves; the 600 s hold duration is fixed by the promoter contract; single region, multi-AZ, so no cross-region consensus sits on a CP path; one team that can operate Postgres, Redis, a CDN, and one payment integration — not a fleet.
+
+## Investigation evidence and open questions
+
+### Evidence
+
+| id | claim | type | scope | sources | limitations | freshness |
+|---|---|---|---|---|---|---|
+| `ev-prompt-burst` | Two million fans arrive in the first 60 s | observed | user prompt | prompt | Stated demand, not measured | current |
+| `ev-prompt-writer` | The seat writer sustains 300 state transitions/s | observed | user prompt | prompt | A measured ceiling; the reason was not profiled | current |
+| `ev-prompt-hold` | A hold lasts 600 s | observed | user prompt | prompt | Fixed by a promoter contract | current |
+| `ev-derived-ratio` | Arrivals exceed writer capacity 111:1 | derived | envelope | `ev-prompt-burst`, `ev-prompt-writer` | Assumes the whole demand arrives inside the 60 s window | current |
+| `ev-derived-floor` | Moving 60,000 seats through the writer takes at least 400 s | derived | envelope | `ev-prompt-writer` | Two transitions per seat; excludes admission and payment | current |
+
+### Questions
+
+| id | question | status | evidence | answer |
+|---|---|---|---|---|
+| `q-writer-cause` | Is the 300/s writer bound by lock contention, CPU, or fsync? | open | `ev-prompt-writer` | Not established; the design is sized to be correct either way |
+| `q-conversion` | What fraction of holds convert to purchases? | open | — | Assumed at 70%, modelled 50–90% |
+| `q-provider-quota` | Does the provider commit to 57 authorizations/s and a 570-deep pool? | open | — | Contractual, not yet confirmed in writing |
+
+### Unknowns
+
+| id | question | status | evidence | resolution |
+|---|---|---|---|---|
+| `u-read-demand` | How much of the 50,000 read QPS is identical for every viewer? | open | `ev-prompt-burst` | Instrument the first on-sale; the design assumes most of it is shared |
+| `u-provider-ordering` | Does the provider guarantee webhook ordering? | open | — | Assume none; the design does not require it |
+
+### Checks
+
+| id | check | status | evidence | detail |
+|---|---|---|---|---|
+| `c-arithmetic` | Verify the envelope arithmetic | pass | `ev-derived-ratio`, `ev-derived-floor` | Recomputed with shell arithmetic |
+| `c-payment-ordering` | Confirm the design survives out-of-order webhooks | pass | — | Rank-based state advance; no provider ordering required |
+| `c-renderer` | Inspect the Mermaid diagrams in a renderer | unknown | — | Not inspected in this example |
 
 ## Requirements
 
@@ -260,13 +296,333 @@ Assumed, each falsifiable: mean order 2.0 seats · 70% hold-to-purchase conversi
 | cache footprint (working set) | n/a | the entire authoritative dataset for one event is 60,000 rows at ~60 B |
 | fan-out per write | n/a | one seat transition affects exactly one shared view read by everybody; per-reader materialisation would be 2,000,000 copies of an identical 14.6 KiB object |
 
-## Candidates
+## Architectures
 
-**A — Single ACID core behind an edge admission gate** `[service-based]`. Every invariant — double-sale, overbooking, money-to-seat, and the cross-tier account limit — lives inside one transactional authority reached through one serialising allocator, and the 111:1 burst is absorbed entirely at the edge by a signed token rather than by anything that can write. A fan makes **one** request for the whole wait, receives a seeded draw position and a signed token, and either renders `NOT_SELECTED` locally forever or polls **one shared cached object** and computes their own estimate. The allocator runs strict priority `finalize > reap > new-hold` inside 300 transitions/s with per-tier budget floors, and finalization is `authorize → assign-in-one-transaction → capture`. Pros: every invariant is a local constraint; the burst never reaches anything that can write; one team can operate it; the AVAILABLE pool is its own token bucket so occupancy self-limits at 53% with no guard to tune. Cons: one primary on the critical path, and a 30 s failover straddles the 68 s payment window of every in-flight checkout; the write path has nothing to scale; the tail is only movable by product levers; the allocator needs fenced leader election; seat *choice* is degraded to best-available during the peak.
+Diagram kind: flowchart
+Why: the candidates differ in topology and the critical flows branch on seat-state transitions, so one kind must carry both.
 
-**B — Per-tier partitioned allocator with in-memory seat authority** `[space-based]`. Seat authority is split six ways by price tier and moved into memory behind a replicated log, so the invariants that span tiers — the per-account limit and a multi-tier basket — stop being local constraints and become an escrow protocol across partitions. It adds six tier authorities, a replicated seat log, a basket coordinator, and an account-limit service. Pros: the seat write path is genuinely elastic; reads of seat state never touch a database; each tier's failure is isolated; the replicated log is a replayable record of every transition. Cons: two invariants cross partition boundaries and become a saga with no isolation; the 6× throughput claim is unmeasured; tier skew means five authorities idle while one saturates; the benefit is 10.7% of the tail; it creates a hold-stampede lockup A does not have and must then add back the guard simulation proved harmful; recovery time becomes the availability budget and must be published; six stateful authorities plus an escrow protocol is a different operational organisation from the one that exists.
+### A — Single ACID core behind an edge admission gate
 
-**C — Deferred allocation with an auditable draw** `[pipeline]`. Demand capture is decoupled from allocation entirely: during the 60 s rush the system accepts **intents** as append-only writes with no seat state touched and no payment call made — a pure insert at 33,333/s with zero contention and no relationship to the 300/s writer. Then the window closes and a batch draws from a published seed, allocates at the 400 s absolute floor, authorizes winners only at a rate the design chooses, and answers every fan. Pros: the charged-without-a-seat window nearly disappears because the seat is committed before an authorization is attempted; no hold exists, so the 61.4% of the tail that hold-expiry owns simply is not there; the burst is an uncontended append; a seeded batch is replayable offline; the entire live read path collapses. Cons: time-to-answer is 10–30 minutes for the last fan; it deletes the live seat map, seat choice, and instant confirmation, which some artists and promoters contractually require; 2,000,000 fans must store a payment token before knowing whether they won; gaming shifts to bulk account creation, exporting a hard problem to an out-of-scope system; a declined winner's seat must be re-allocated, so the batch is a loop that converges in 2 rounds rather than one pass.
+`[service-based]`. Every invariant — double-sale, overbooking, money-to-seat, and the cross-tier account limit — lives inside one transactional authority reached through one serialising allocator, and the 111:1 burst is absorbed entirely at the edge by a signed token rather than by anything that can write. A fan makes **one** request for the whole wait, receives a seeded draw position and a signed token, and either renders `NOT_SELECTED` locally forever or polls **one shared cached object** and computes their own estimate. The allocator runs strict priority `finalize > reap > new-hold` inside 300 transitions/s with per-tier budget floors, and finalization is `authorize → assign-in-one-transaction → capture`.
+
+**Structure.**
+
+```mermaid
+flowchart LR
+  subgraph Edge
+    fan([Fan])
+    cdn[CDN]
+    gateway[Admission gateway]
+  end
+  subgraph Application
+    allocator[Allocator]
+    payment[Payment adapter]
+    webhook[Webhook receiver]
+    reconciler[Reconciler]
+  end
+  subgraph Data
+    seatdb[(Seat database)]
+    queue[(Queue admission store)]
+    snapshot[(Draw snapshot)]
+    availability[(Availability bitmap)]
+  end
+  provider[Payment provider]
+
+  fan -->|reads| cdn
+  fan -->|joins and holds| gateway
+  gateway -->|admits| allocator
+  allocator -->|conditional UPDATE| seatdb
+  allocator --> queue
+  allocator --> snapshot
+  allocator -.-> availability
+  payment -->|authorizes| provider
+  provider -.->|webhook| webhook
+  webhook -.-> reconciler
+  reconciler -->|reconciles| seatdb
+```
+
+**Components.**
+
+| id | name | kind | zone | tech | note | state contract |
+|---|---|---|---|---|---|---|
+| `fan` | Fan | `person` | edge | — | Browser or mobile app | — |
+| `cdn` | CDN | `cdn` | edge | — | Serves the shared drain front and availability bitmap | — |
+| `gateway` | Admission gateway | `gateway` | edge | — | Verifies the signed admission token with zero network calls | — |
+| `allocator` | Allocator | `service` | app | Elixir | One active instance per event; strict priority finalize > reap > new-hold | — |
+| `payment` | Payment adapter | `service` | app | — | Attempt-invariant provider key; 570-deep pool | — |
+| `webhook` | Webhook receiver | `gateway` | app | — | Verify, store raw, acknowledge in under 1 s | — |
+| `reconciler` | Reconciler | `worker` | async | — | Owns `UNKNOWN`; 5-minute SLA | — |
+| `seatdb` | Seat database | `db-sql` | data | Postgres | The invariant carrier and the only authoritative store for seats, holds, orders, payments, and ledger | authoritative; WAL fsync + synchronous standby apply; multi-AZ; RPO 0 for one-AZ loss; RTO < 30 min region restore; fenced promotion |
+| `queue` | Queue admission store | `db-nosql` | data | Sorted set | 200 MB; derived from the published draw | derived; source `snapshot`; cursor `seed_id` |
+| `snapshot` | Draw snapshot | `blob` | data | Object storage | Published seed and ordered position list | authoritative; object-store durability; RPO 0; RTO rebuild from seed |
+| `availability` | Availability bitmap | `cache` | data | Versioned object | 14.6 KiB raw; 1 s TTL pointer | derived; source `seatdb` transition log; cursor `state_version` |
+| `provider` | Payment provider | `external` | external | — | Third party; no ordering or exactly-once guarantee | — |
+
+**Edges and contracts.**
+
+| from | to | kind | label | deadline | retry owner | backlog bound |
+|---|---|---|---|---|---|---|
+| `fan` | `cdn` | sync | read drain front | 300 ms | CDN client, jittered | 1 s TTL; request collapsing |
+| `fan` | `gateway` | sync | join draw or hold seats | 2–3 s | client, same idempotency key | 429 with `Retry-After` |
+| `gateway` | `allocator` | sync | admit | 500 ms of the gateway budget | gateway, once with jitter | seat-token lease pool denominated in AVAILABLE seats |
+| `allocator` | `seatdb` | sync | conditional UPDATE | 500 ms transaction budget | allocator, on serialization failure | bounded by the 300/s writer |
+| `payment` | `provider` | sync | authorize or capture | 12 s | payment adapter, attempt-invariant key | 570 in flight; shed at the adapter |
+| `provider` | `webhook` | async | payment event | under 1 s to acknowledge | provider owns retries | queue depth 10,000, age-based shedding |
+| `webhook` | `reconciler` | async | ambiguous payment | 5-minute resolution SLA | reconciler | open `UNKNOWN` alarmed above 50 |
+| `allocator` | `availability` | async | project transition | 1 s maximum age | projector | bounded by the 1 s publish cadence |
+
+**Flows.** The admission/hold path is complex branching logic, so it is a flowchart. Checkout and payment branches on the payment window and provider outcome, so it is a flowchart. Reaping is a state transition with a race, so it gets its own flowchart.
+
+```mermaid
+flowchart LR
+  fan([Fan]) -->|1 join| gateway[Admission gateway]
+  gateway -->|2 signed token| fan
+  fan -->|3 poll shared front| cdn[CDN]
+  fan -->|4 submit hold| gateway
+  gateway -->|5 admit| allocator[Allocator]
+  allocator -->|6 conditional UPDATE| seatdb[(Seat database)]
+  seatdb --> decision{affected rows = quantity?}
+  decision -->|yes| held[HELD]
+  decision -->|no| soldout[SOLD_OUT]
+  allocator -.->|7 project| availability[(Availability bitmap)]
+  allocator -->|8 publish position| queue[(Queue admission store)]
+```
+
+| seq | from | to | label | note |
+|---|---|---|---|---|
+| 1 | `fan` | `gateway` | join the draw | one request for the whole wait |
+| 2 | `gateway` | `fan` | signed position and token | no later request needed to learn the outcome |
+| 3 | `fan` | `cdn` | poll the shared drain front | 1 s TTL; 40,000 QPS served by the CDN |
+| 4 | `fan` | `gateway` | submit hold with idempotency key | retry returns the same hold |
+| 5 | `gateway` | `allocator` | admit | token verified locally at the edge |
+| 6 | `allocator` | `seatdb` | conditional UPDATE | affected-row count is the outcome |
+| 7 | `allocator` | `availability` | project the transition | derived, may lag 1 s |
+| 8 | `allocator` | `queue` | publish the position | auditable, not authoritative |
+
+```mermaid
+flowchart TD
+  fan([Fan]) -->|1 POST /v1/orders| gateway[Admission gateway]
+  gateway -->|2 submit checkout| allocator[Allocator]
+  allocator -->|3 read hold and window| seatdb[(Seat database)]
+  seatdb --> window{payment window sufficient?}
+  window -->|no| refuse[409 PAYMENT_WINDOW_TOO_SHORT]
+  window -->|yes| lock[Write durable payment lock]
+  lock -->|4 authorize| payment[Payment adapter]
+  payment -->|5 authorize with attempt-invariant key| provider[Payment provider]
+  provider --> result{authorized?}
+  result -->|yes| commit[Assign seats, ledger, outbox in one transaction]
+  commit --> done[COMPLETED with entitlements]
+  result -->|timeout after dispatch| unknown[Record UNKNOWN]
+  unknown -.-> reconciler[Reconciler]
+  reconciler -->|query by provider reference| provider
+  reconciler -->|resolve terminal state| seatdb
+```
+
+```mermaid
+flowchart TD
+  timer([Reaper tick]) --> scan[Scan ACTIVE holds past expires_at]
+  scan --> lock{payment lock?}
+  lock -->|yes| skip[Leave for the reconciler]
+  lock -->|no| update[Conditional UPDATE to EXPIRED]
+  update --> decision{row affected?}
+  decision -->|yes| release[Seats to AVAILABLE]
+  decision -->|no| skip
+  release -.-> project[Project availability bitmap]
+```
+
+**Trade-offs.** Pros: every invariant is a local constraint; the burst never reaches anything that can write; one team can operate it; the AVAILABLE pool is its own token bucket so occupancy self-limits at 53% with no guard to tune. Cons: one primary on the critical path, and a 30 s failover straddles the 68 s payment window of every in-flight checkout; the write path has nothing to scale; the tail is only movable by product levers; the allocator needs fenced leader election; seat *choice* is degraded to best-available during the peak.
+
+**Migration.** Greenfield; no migration.
+
+**Ratings.**
+
+| candidate | deployability | elasticity | evolvability | faultTolerance | modularity | cost | performance | reliability | scalability | simplicity | testability |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `a` | 4 | 4 | 3 | 3 | 3 | 4 | 4 | 5 | 3 | 4 | 4 |
+
+### B — Per-tier partitioned allocator with in-memory seat authority
+
+`[space-based]`. Seat authority is split six ways by price tier and moved into memory behind a replicated log, so the invariants that span tiers — the per-account limit and a multi-tier basket — stop being local constraints and become an escrow protocol across partitions. It adds six tier authorities, a replicated seat log, a basket coordinator, and an account-limit service.
+
+**Structure.**
+
+```mermaid
+flowchart LR
+  subgraph Edge
+    fan([Fan])
+    gateway[Admission gateway]
+  end
+  subgraph Application
+    tiers[Tier allocators (6)]
+    basket[Basket coordinator]
+    limit[Account-limit service]
+    payment[Payment adapter]
+  end
+  subgraph Data
+    seatlog[(Replicated seat log)]
+    snapshot[(Draw snapshot)]
+  end
+  provider[Payment provider]
+
+  fan -->|joins| gateway
+  gateway -->|admits| tiers
+  basket -->|escrows across tiers| tiers
+  limit -->|quota| basket
+  tiers -->|appends| seatlog
+  tiers -.-> snapshot
+  payment -->|authorizes| provider
+```
+
+**Components.**
+
+| id | name | kind | zone | tech | note | state contract |
+|---|---|---|---|---|---|---|
+| `fan` | Fan | `person` | edge | — | Browser or mobile app | — |
+| `gateway` | Admission gateway | `gateway` | edge | — | Signed-token check | — |
+| `tiers` | Tier allocators | `service` | app | — | Six partitions; each holds a tier's seat authority | authoritative per tier; replicated log commit; independent tier failure domain; RPO 0; RTO < 60 s per tier |
+| `basket` | Basket coordinator | `service` | app | — | Escrow across tiers; the new saga boundary | — |
+| `limit` | Account-limit service | `service` | app | — | Cross-tier quota | — |
+| `payment` | Payment adapter | `service` | app | — | Attempt-invariant provider key | — |
+| `seatlog` | Replicated seat log | `stream` | data | — | Replayable transition record | authoritative; quorum commit; RPO 0; RTO replay |
+| `snapshot` | Draw snapshot | `blob` | data | Object storage | Published seed and ordered list | authoritative; object-store durability |
+| `provider` | Payment provider | `external` | external | — | Third party; no ordering or exactly-once | — |
+
+**Edges and contracts.**
+
+| from | to | kind | label | deadline | retry owner | backlog bound |
+|---|---|---|---|---|---|---|
+| `fan` | `gateway` | sync | hold | 3 s | client, same idempotency key | 429 with `Retry-After` |
+| `gateway` | `tiers` | sync | admit | 500 ms | gateway, once with jitter | tier budget |
+| `basket` | `tiers` | sync | escrow reserve | 1 s | basket coordinator | bounded by tier AVAILABLE |
+| `limit` | `basket` | sync | quota check | 200 ms | limit service | bounded by account quota |
+| `tiers` | `seatlog` | sync | append transition | 500 ms | tier authority | replication lag bound |
+| `payment` | `provider` | sync | authorize | 12 s | payment adapter | 570 in flight |
+
+**Flows.** B reuses A's admission, checkout, and reaping shapes; the load-bearing difference is the partition boundary. The escrow path is the only flow that earns its own diagram.
+
+```mermaid
+flowchart LR
+  fan([Fan]) -->|1 multi-tier basket| gateway[Admission gateway]
+  gateway -->|2 admit| basket[Basket coordinator]
+  basket -->|3 quota| limit[Account-limit service]
+  basket -->|4 reserve tier 1| tier1[Tier allocator]
+  basket -->|4 reserve tier 2| tier2[Tier allocator]
+  tier1 -->|5 append| seatlog[(Replicated seat log)]
+  tier2 -->|5 append| seatlog
+  basket -->|6 all reserved| held[HELD]
+  basket -->|6 any failed| rollback[Release reserved tiers]
+```
+
+| seq | from | to | label | note |
+|---|---|---|---|---|
+| 1 | `fan` | `gateway` | multi-tier hold | a basket spans partitions |
+| 2 | `gateway` | `basket` | admit | token checked at the edge |
+| 3 | `basket` | `limit` | quota check | cross-tier invariant |
+| 4 | `basket` | `tiers` | escrow reserve | each tier is independent |
+| 5 | `tiers` | `seatlog` | append transition | replicated log |
+| 6 | `basket` | `fan` | held or released | a failed reserve rolls back the successful tiers |
+
+**Trade-offs.** Pros: the seat write path is genuinely elastic; reads of seat state never touch a database; each tier's failure is isolated; the replicated log is a replayable record of every transition. Cons: two invariants cross partition boundaries and become a saga with no isolation; the 6× throughput claim is unmeasured; tier skew means five authorities idle while one saturates; the benefit is 10.7% of the tail; it creates a hold-stampede lockup A does not have; recovery time becomes the availability budget and must be published; six stateful authorities plus an escrow protocol is a different operational organisation from the one that exists.
+
+**Migration.** Greenfield; no migration.
+
+**Ratings.**
+
+| candidate | deployability | elasticity | evolvability | faultTolerance | modularity | cost | performance | reliability | scalability | simplicity | testability |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `b` | 2 | 5 | 3 | 4 | 4 | 2 | 5 | 4 | 5 | 1 | 3 |
+
+### C — Deferred allocation with an auditable draw
+
+`[pipeline]`. Demand capture is decoupled from allocation entirely: during the 60 s rush the system accepts **intents** as append-only writes with no seat state touched and no payment call made — a pure insert at 33,333/s with zero contention and no relationship to the 300/s writer. Then the window closes and a batch draws from a published seed, allocates at the 400 s absolute floor, authorizes winners only at a rate the design chooses, and answers every fan.
+
+**Structure.**
+
+```mermaid
+flowchart LR
+  subgraph Edge
+    fan([Fan])
+    gateway[Intent gateway]
+  end
+  subgraph Application
+    intake[Intent intake]
+    draw[Draw and allocator]
+    payment[Payment adapter]
+  end
+  subgraph Data
+    intents[(Intent log)]
+    snapshot[(Draw snapshot)]
+    seatdb[(Seat database)]
+  end
+  provider[Payment provider]
+
+  fan -->|submits intent| gateway
+  gateway --> intake
+  intake -->|appends| intents
+  draw -->|reads closed window| intents
+  draw -->|publishes| snapshot
+  draw -->|allocates at 300/s| seatdb
+  draw -.->|authorizes winners| payment
+  payment --> provider
+```
+
+**Components.**
+
+| id | name | kind | zone | tech | note | state contract |
+|---|---|---|---|---|---|---|
+| `fan` | Fan | `person` | edge | — | Browser or mobile app | — |
+| `gateway` | Intent gateway | `gateway` | edge | — | Accepts an intent and a payment token; no seat write | — |
+| `intake` | Intent intake | `service` | app | — | Pure append at 33,333/s | — |
+| `draw` | Draw and allocator | `service` | app | — | Batch draw from a published seed; allocates at the floor | — |
+| `payment` | Payment adapter | `service` | app | — | Authorizes winners only | — |
+| `intents` | Intent log | `stream` | data | — | Append-only demand record | authoritative; quorum commit; RPO 0; RTO replay |
+| `snapshot` | Draw snapshot | `blob` | data | Object storage | Published seed and ordered list | authoritative; object-store durability |
+| `seatdb` | Seat database | `db-sql` | data | Postgres | Authoritative seat state | authoritative; WAL fsync + standby apply; RPO 0; RTO < 30 min |
+| `provider` | Payment provider | `external` | external | — | Third party; no ordering or exactly-once | — |
+
+**Edges and contracts.**
+
+| from | to | kind | label | deadline | retry owner | backlog bound |
+|---|---|---|---|---|---|---|
+| `fan` | `gateway` | sync | submit intent | 2 s | client, same account | 429 with `Retry-After` |
+| `gateway` | `intake` | sync | append intent | 500 ms | gateway, once | append log |
+| `intake` | `intents` | sync | append | 500 ms | intake | quorum commit |
+| `draw` | `seatdb` | sync | allocate | 300/s writer | draw, bounded batch | 300 transitions/s |
+| `draw` | `payment` | async | authorize winners | rate chosen by the design | draw | bounded by the provider quota |
+| `payment` | `provider` | sync | authorize | 12 s | payment adapter | 570 in flight |
+
+**Flows.** The deferred draw is the candidate's distinctive logic, so it gets a flowchart. The intake path is a linear append and is covered by the step table.
+
+```mermaid
+flowchart TD
+  fan([Fan]) -->|1 submit intent and payment token| gateway[Intent gateway]
+  gateway -->|2 append| intents[(Intent log)]
+  close([Window closes]) --> draw[Draw from the published seed]
+  draw -->|3 publish| snapshot[(Draw snapshot)]
+  draw -->|4 allocate at 300/s| seatdb[(Seat database)]
+  draw --> decision{winner?}
+  decision -->|yes| auth[Authorize winners]
+  auth --> seatdb
+  decision -->|no| reject[NOT_SELECTED terminal]
+```
+
+| seq | from | to | label | note |
+|---|---|---|---|---|
+| 1 | `fan` | `gateway` | submit intent | no seat state touched |
+| 2 | `gateway` | `intents` | append intent | pure insert; no contention |
+| 3 | `draw` | `snapshot` | publish seed and ordered list | auditable months later |
+| 4 | `draw` | `seatdb` | allocate at the 400 s floor | no hold exists |
+| 5 | `draw` | `payment` | authorize winners | losers are answered without a payment call |
+
+**Trade-offs.** Pros: the charged-without-a-seat window nearly disappears because the seat is committed before an authorization is attempted; no hold exists, so the 61.4% of the tail that hold-expiry owns simply is not there; the burst is an uncontended append; a seeded batch is replayable offline; the entire live read path collapses. Cons: time-to-answer is 10–30 minutes for the last fan; it deletes the live seat map, seat choice, and instant confirmation, which some artists and promoters contractually require; 2,000,000 fans must store a payment token before knowing whether they won; gaming shifts to bulk account creation, exporting a hard problem to an out-of-scope system; a declined winner's seat must be re-allocated, so the batch is a loop that converges in 2 rounds rather than one pass.
+
+**Migration.** Greenfield; no migration.
+
+**Ratings.**
+
+| candidate | deployability | elasticity | evolvability | faultTolerance | modularity | cost | performance | reliability | scalability | simplicity | testability |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `c` | 3 | 5 | 3 | 4 | 4 | 3 | 1 | 4 | 4 | 1 | 4 |
 
 ## Comparison and recommendation
 
@@ -285,15 +641,15 @@ No rating appears in this chain. Every link is an envelope number, an invariant,
 9. **What breaks first in A, named up front:** the primary failover, because a 30 s failover defers 9,000 transitions and straddles the 68 s payment window of every in-flight checkout — precisely the orders with money in the air. The durable payment lock and the reconciler bound it; they do not eliminate it.
 10. **The measurement that would overturn this:** profile *why* the seat writer is 300/s. If it is lock contention on hot seat rows, server-assigned best-available may raise it for free and the ceiling was never a ceiling. If it is CPU or fsync, it is real. The design is sized at 300/s so that it is correct either way, which is what makes the profile a day-one task rather than a prerequisite.
 
-See `design.json` for the full ratings matrix and per-candidate flows. Every candidate carries a 1-star cell except A — B's is simplicity and C's is performance — and A's absence of one is a flag on the rating rather than a compliment to the design, which is why A's honest floor is named explicitly: its fault tolerance is a 3, and its dependence on a single primary during a 68 s payment window is the thing most likely to produce the P0 the whole design exists to prevent.
+Every candidate carries a 1-star cell except A — B's is simplicity and C's is performance — and A's absence of one is a flag on the rating rather than a compliment to the design, which is why A's honest floor is named explicitly: its fault tolerance is a 3, and its dependence on a single primary during a 68 s payment window is the thing most likely to produce the P0 the whole design exists to prevent.
 
-Every authoritative database, log, and object store records its acknowledgement point, independent failure domain, RPO, RTO, and recovery procedure. Every derived cache, replica, projection, and broker records its reconstruction source and cursor. Every edge records a deadline or maximum age, exactly one retry owner, and a finite concurrency, retention, in-flight, or backlog bound; these contracts are visible in the component inspector.
+Every authoritative database, log, and object store records its acknowledgement point, independent failure domain, RPO, RTO, and recovery procedure. Every derived cache, replica, projection, and broker records its reconstruction source and cursor. Every edge records a deadline or maximum age, exactly one retry owner, and a finite concurrency, retention, in-flight, or backlog bound.
 
 ## Critical deep dives
 
 1. **Allocate a 300/s budget that cannot be increased.** Three classes of work compete for one fixed budget, and at 50% conversion 49.7% of all writer work is wasted. Strict priority `finalize > reap > new-hold` with new holds taking the residual and no fixed shares; **no inventory guard**, because the AVAILABLE pool is itself the token bucket and occupancy self-limits at 46/53/67/80% for 90/70/50/30% conversion — an explicit guard at 60% or 35% moved t95 from 1,482 s to 2,099 s and 3,310 s, so the guard was deleted because the numbers said so. Server-assigned best-available within tier during the peak gives exactly one transition per seat and zero aborted conditional updates. Offer exactly the requested quantity: offering 4 for an order of 2 at 75 orders/s wastes 150 transitions/s, half the entire budget. Per-tier floors of `300 × share × 0.5` redistributed each second, because the 5% tier would otherwise exhaust in 20 s while five tiers starve. Artist releases are scheduled, since 2,000 seats is 6.7 s of the whole budget. Rejected: fixed shares, an inventory guard, optimistic per-seat CAS with fan-chosen seats, and raising the writer. **Failure mode:** reaper starvation under a finalization wave — expired holds accumulate, AVAILABLE goes to zero, and admissions stop while thousands of seats are notionally free. Detected by `reap_backlog_seconds` paged at 30 s; mitigated by promoting the reaper above finalization at 60 s, an explicit alarmed priority inversion rather than an emergent one. **The conclusion about the tail:** the correct response to a 2,149 s t99 is not a faster writer — it is raising conversion (−22.2% of all work) and shortening abandonment latency (t99 1,551 s at 60% explicit release, 1,090 s at 90%). Both are product changes, and they beat six partitions by a factor of three.
 
-2. **Make charged-without-a-seat structurally impossible.** Five mechanisms, each closing one named hole. (a) `authorize → assign in one transaction → capture`, never capture first; a failed assignment voids the authorization so no charge ever settles. The accepted exposure is stated: a voided authorization can show as a pending charge for a few business days, which is a support-messaging problem, not a P0 — the difference between "we owe you a refund" and "your bank will release the hold". (b) A 68 s payment window reserved inside every hold, with checkout refused below it and a **durable** payment lock the reaper may not touch; without it, the exposed race is every checkout begun in the last 53 s of a hold. (c) `UNKNOWN` as a third terminal-until-resolved state with the reconciler as its named owner and a 5-minute SLA — an ambiguous authorization is *queried*, never repeated, which is safe because the provider key is attempt-invariant; past the SLA the order is force-voided with the provider reference attached. (d) A webhook receiver that verifies, stores raw, and acknowledges in under 1 s, killing duplicates with a unique index and out-of-order arrival with the monotonic rank rule — it requires no ordering guarantee from the provider at all, which is correct, because there is not one. (e) Two continuous sweeps in both directions plus a nightly ledger audit that blocks settlement on a mismatch. Rejected: capture-first, a distributed transaction spanning the provider, retrying an ambiguous authorization, trusting webhook ordering, and selling on provider unavailability — the last is refused because demand exceeds supply 33:1 so a refused sale is immediately re-sold, reasoning that would be *wrong* for a slow-selling event and is therefore a configuration value, not a code path. **Failure mode:** primary failover inside the 68 s payment window, bounded by two published numbers — no seat in an in-flight payment is resold for at least 68 s after a failover, and no authorization goes unresolved for more than 5 minutes.
+2. **Make charged-without-a-seat structurally impossible.** Five mechanisms, each closing one named hole. (a) `authorize → assign in one transaction → capture`, never capture first; a failed assignment voids the authorization so no charge ever settles. The accepted exposure is stated: a voided authorization can show as a pending charge for a few business days, which is a support-messaging problem, not a P0 — the difference between "we owe you a refund" and "your bank will release the hold". (b) A 68 s payment window reserved inside every hold, with checkout refused below it and a **durable** payment lock the reaper may not touch; without it, the exposed race is every checkout begun in the last 53 s of a hold. (c) `UNKNOWN` as a third terminal-until-resolved state with the reconciler as its named owner and a 5-minute SLA — an ambiguous authorization is *queried*, never repeated, which is safe because the provider key is attempt-invariant; past the SLA the order is force-voided with the provider reference attached. (d) A webhook receiver that verifies, stores raw, and acknowledges in under 1 s, killing duplicates with a unique index and out-of-order arrival with the monotonic rank rule — it requires no ordering guarantee from the provider at all, which is correct, because there is not one. (e) Two continuous sweeps in both directions plus a nightly ledger audit that blocks settlement on a mismatch. Rejected: capture-first, a distributed transaction spanning the provider, retrying an ambiguous authorization, trusting webhook ordering, and selling on provider unavailability — the last is refused because demand exceeds supply 33:1 so a refused sale is immediately re-sold, reasoning that would be *wrong* for a slow-selling event and is therefore a configuration value, not a code path. **Failure mode:** primary failover inside the 68 s payment window, bounded by two published numbers — no seat in an in-flight payment is resold for at least 68 s after a failover, and no authorization is left unresolved beyond 5 minutes.
 
 3. **Turn 33,333 arrivals/s into 75 admissions/s without a per-fan read.** One request per fan for the entire wait, returning a position, a seed id, and a signed token. A seeded published draw rather than FIFO by arrival millisecond, which rewards fast networks, proximity to a POP, and bots. Reject 94% in the first minute with a signed terminal payload rendered client-side and deliberately **not** retryable, because a retryable rejection to 1.88M clients is an outage — and deferring that answer to sell-out would convert it into a 1,880,000-request herd at the moment the system is most loaded. The remaining ~120,000 poll **one shared cached object** carrying `{now_serving, drain_rate, seat_version, server_time}` at a 1 s TTL and compute their own estimate locally: ~40,000 QPS served entirely by the CDN at 50 req/s origin fill. Admission is decided at the edge by a local signature check with zero network calls. The admission unit is a seat-token lease denominated in AVAILABLE inventory — the one quota no gateway or mesh can express, and the only custom component in the admission path; everything else is bought configuration. Rejected: a per-fan position endpoint (4–8× the read budget), SSE or WebSockets to 2M fans (20 GB of connection state, ~20 gateway hosts, and a reconnect-storm surface at the worst possible moment), a 40 s poll interval, and FIFO by arrival. **Failure modes:** a `drain_rate` published too high, mitigated by publishing a trailing 60 s measured average and rendering a range rather than a point; and, stated deliberately, **recovery is not automatic** — after an incident `now_serving` does not accelerate to catch up, because it is bounded by the residual of a fixed 300/s budget, so the system returns to health by *not* accelerating and the queue simply takes longer.
 

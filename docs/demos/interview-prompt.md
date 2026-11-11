@@ -34,10 +34,8 @@ The first candidate wins because the waiting room keeps the booking core near 60
 
 ## Artifacts
 
-The run produces:
+The run produces one document:
 
-- `docs/design/design-ticketmaster/design.json`
-- `docs/design/design-ticketmaster/DESIGN.md`
-- `$TMPDIR/system-design-design-ticketmaster.html`
+- `docs/design/design-ticketmaster/DESIGN.md` — the source of truth, with Mermaid architecture and flow diagrams
 
 The value is not memorizing the winning components. It is showing how requirements, invariants, and workload numbers eliminate architectures that are either unsafe or unnecessarily complex.
