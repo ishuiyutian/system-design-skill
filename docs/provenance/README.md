@@ -23,7 +23,10 @@ Nothing links here from `SKILL.md`, so the model never opens it and it costs zer
 ## Files
 
 - [SKILL.md](SKILL.md) — routing, resume, and completion contracts
-- [DESIGN-FORMAT.md](DESIGN-FORMAT.md) — the document contract, diagram portability, and the debt register
+- [DESIGN-FORMAT.md](DESIGN-FORMAT.md) — the SAD document contract, section order, diagram portability, and the debt appendix
+- [C4/CONSTRAINTS.md](C4/CONSTRAINTS.md) — the C4 constraint catalogue, severities, scoping, and regression runbook
+- [C4/RULES.md](C4/RULES.md) — C4 Level 1 and Level 2 modeling rules and the rule catalogue
+- [C4/PROFILE.md](C4/PROFILE.md) — the Mermaid C4 syntax profile and renderer limits
 - [HEURISTICS.md](HEURISTICS.md) — the decision rules, the ladders, the envelope numbers
 - [ARCHETYPES.md](ARCHETYPES.md) — per-shape numbers anchors and anti-gates
 - [AUDIT.md](AUDIT.md) — the debt patterns, the severity axes, the suppressions, and the identity scheme

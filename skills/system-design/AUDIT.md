@@ -281,7 +281,7 @@ The merge, in order:
 
 ## Recording the audit
 
-Write the Architectural debt section into `DESIGN.md` before final verification; the format is in [DESIGN-FORMAT.md](DESIGN-FORMAT.md#the-debt-register). It is the debt register, and it is the only place an acceptance can persist.
+Write the Architectural debt appendix into `DESIGN.md` before final verification; the format is in [DESIGN-FORMAT.md](DESIGN-FORMAT.md#appendix--architectural-debt). It is the debt register, and it is the only place an acceptance can persist.
 
 Three things belong there beyond the findings themselves.
 

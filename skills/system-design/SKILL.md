@@ -4,7 +4,7 @@ description: >-
   Designs or evolves a production system from repository evidence, capacity
   math, invariants, and explicit trade-offs, and audits architectural debt in an
   existing repository. Writes one durable DESIGN.md as the source of truth, with
-  architecture and flow diagrams.
+  C4 architecture diagrams.
   USE for: architecture decisions of any size - evolving a repository, greenfield
   systems, scaling or sharding, datastore, consistency, or caching choices,
   capacity and cost sizing, recording an ADR, drift audits, or a single choice
@@ -14,7 +14,7 @@ description: >-
 license: MIT
 metadata:
   author: ishuiyutian
-  version: "2.0.0"
+  version: "2.6.0"
 ---
 
 # System Design
@@ -67,7 +67,7 @@ Otherwise derive a kebab-case slug naming the system or subsystem, not the phras
 
 State the mode, reason, whether you resumed, and the target directory in one line.
 
-For a new artifact-producing run, create a draft `DESIGN.md` with the frontmatter and section skeleton defined in [DESIGN-FORMAT.md](DESIGN-FORMAT.md), then fill it in place. `DESIGN.md` is the working document from this step onward; it is the source of truth, not a summary written at the end. Preserve existing designs. A legacy `design.json` is a read-only migration input: read it to seed the Markdown document, never update it, and never create a new one. Keep the direct-answer route artifact-free. Reuse current records, inspect stale ones, and re-read the sources behind any stale evidence before repeating discovery.
+For a new artifact-producing run, create a draft `DESIGN.md` with the frontmatter and section skeleton defined in [DESIGN-FORMAT.md](DESIGN-FORMAT.md), then fill it in place. `DESIGN.md` is the working document from this step onward; it is the source of truth, not a summary written at the end. Preserve existing designs. A `DESIGN.md` using the pre-2.1 section order is migrated in place to the SAD skeleton, preserving `## Notes` verbatim; never write a second document. A legacy `design.json` is a read-only migration input: read it to seed the Markdown document, never update it, and never create a new one. Keep the direct-answer route artifact-free. Reuse current records, inspect stale ones, and re-read the sources behind any stale evidence before repeating discovery.
 
 ### 2. Establish the current truth
 
@@ -84,13 +84,13 @@ In both modes, define:
 - critical end-to-end flows, including failure and recovery flows;
 - source-of-truth stores versus derived views.
 
-Record load-bearing observations, derivations, and inferences with source identity, scope, and limitations in the investigation register; retain unanswered parts of the ask as open questions and missing proof as unknowns. Use the [evidence lifecycle](HEURISTICS.md#evidence-and-uncertainty). A well-formatted record does not prove its claim.
+Record load-bearing observations, derivations, and inferences with source identity, scope, and limitations in the evidence appendix's investigation register; retain unanswered parts of the ask as open questions and missing proof as unknowns. Use the [evidence lifecycle](HEURISTICS.md#evidence-and-uncertainty). A well-formatted record does not prove its claim.
 
 Ask the user only for decisions that cannot be recovered from the repo or prompt.
 
 ### 3. Close the requirement frontier
 
-Use [INTERVIEW.md](INTERVIEW.md) to fill only the unresolved frontier. Ask numbered questions in at most three rounds of at most eight, each with a recommended default; with no user present to answer, take the defaults instead of asking. Functional scope, excluded scope, numerical non-functional targets, workload shape, team/cost constraints, and the top three characteristics must be explicit. Label every assumption.
+Use [INTERVIEW.md](INTERVIEW.md) to fill only the unresolved frontier. Ask numbered questions in at most three rounds of at most eight, each with a recommended default; with no user present to answer, take the defaults instead of asking. Functional scope, excluded scope, business objectives, stakeholders, security and regulatory obligations, data classifications, numerical non-functional targets, workload shape, team/cost constraints, and the top three characteristics must be explicit. Guiding principles and business-impact KPIs are recorded when they can change a decision. Label every assumption.
 
 ### 4. Run and challenge the envelope
 
@@ -102,7 +102,7 @@ Run the physics/CAP sanity pass in [INTERVIEW.md](INTERVIEW.md). Use the compact
 
 Topology that is correct for the wrong data model is not a design. Before drawing anything, state for each core entity: its representation in memory and at rest, its identity scheme, which component holds ordering authority, how conflicts resolve per field class, the point at which a write becomes durable, and the garbage-collection or compaction story. Use the conflict-resolution rule in [HEURISTICS.md](HEURISTICS.md); it is chosen by the coordination available, not by sophistication.
 
-Write this into the Data and consistency model section before candidates exist. For every structured store, also generate intuitive database schemas: name each table or collection, list only the fields that explain the design, mark primary, partition, sort, and deduplication keys, and state important indexes, relationships, source-of-truth status, and retention notes. Use human-readable cards like `Ticket — id, eventId, seat, price, status, userId`; no executable DDL. Where candidates disagree on any of these, that disagreement is itself a candidate axis—see step 6.
+Write this into the Data Sets & Data Model section before candidates exist, including data impact and migration. For every structured store, also generate intuitive database schemas: name each table or collection, list only the fields that explain the design, mark primary, partition, sort, and deduplication keys, and state important indexes, relationships, source-of-truth status, and retention notes. Use human-readable cards like `Ticket — id, eventId, seat, price, status, userId`; no executable DDL. Where candidates disagree on any of these, that disagreement is itself a candidate axis—see step 6.
 
 ### 6. Draw the candidates
 
@@ -114,31 +114,32 @@ Every distributed mechanism must earn its place with a number, invariant, or nam
 
 A gate is cleared by answering it in this design's own terms: the component that does it, the number it holds to, or the behaviour it accepts. Repeating the gate's wording is not an answer, and quoting it as evidence for a design that does not implement it is the failure this rule exists to catch. Where an archetype's gate does not apply because you took a different structure, say which structure replaced it and what now covers the failure that gate was guarding—an obligation is discharged or explicitly retired, never dropped. If a candidate deviates from the conventional baseline, name that baseline and prove how the deviation still covers its failure modes.
 
-Choose **one diagram kind for the whole design** before drawing, using the [diagram choice](DESIGN-FORMAT.md#how-to-choose) in [DESIGN-FORMAT.md](DESIGN-FORMAT.md). Select C4 structure, flowchart, or sequence by the primary question the diagrams must answer; if two are genuinely tied, ask the user with a recommended default, and if no user is present take the default and mark it `assumed`. Record `Diagram kind:` and a one-line reason in the document, then use only that kind for every diagram. Do not mix kinds; use a numbered step table for what the chosen kind cannot express, and give a closed option no diagram.
+Draw structure with C4. Use the [C4 constraint catalogue](C4/CONSTRAINTS.md) as the guidance — its IDs and severities are the contract — plus the [generation gates](C4/RULES.md#generation-gates) and [model rules](C4/RULES.md) for Level 1 and Level 2, and the [Mermaid C4 profile](C4/PROFILE.md) for syntax; [DESIGN-FORMAT.md](DESIGN-FORMAT.md#structure-diagrams) says where the diagrams belong and what to record. Add one `C4Context` under High-level solution design, then one `C4Container` per candidate. Record `Structure diagram: C4Context + C4Container` with a one-line reason. Admit each container with the steady-state process or owned-store test; draw one-hop relationships; then run the completeness, cross-level, and cross-candidate gates. Keep CDN, DNS, load balancers, and deployment nodes out of C4; keep protocols out of the context and in the L2 relationship technology field. Record a load-bearing deployment service in Key Design Decisions or Technology Impacts. Do not add a flow diagram, component, edge, or flow-step table. Critical-flow behavior and load-bearing dependency deadline, retry, and backlog facts belong in Key Design Decisions. Omit the rest, and give a closed option no diagram.
 
 ### 7. Decide and deep-dive
 
 Rate every candidate using [HEURISTICS.md](HEURISTICS.md), led by the user's top three characteristics. Recommend one with a chained evidence argument. A rating may not appear in that chain—it is a candidate's opinion of itself. The chain rests on an envelope number, an invariant, or a named failure mode.
 
-Resolve the two or three decisions with the greatest correctness, cost, or operability pressure. Each deep dive must record pressure, decision, rejected alternatives, failure mode, and evidence. State retries, timeouts, idempotency, reconciliation, failover, observability, rollout, what breaks first, and the measurement that would overturn the recommendation.
+Record the decisions a reviewer would challenge in the Key Design Decisions section: the decision log, interface contracts, in-scope and out-of-scope integrations, integration details and data mapping, and mobile/client details. Resolve the two or three decisions with the greatest correctness, cost, or operability pressure. Each deep dive must record pressure, decision, rejected alternatives, failure mode, and evidence. State retries, timeouts, idempotency, reconciliation, failover, observability, rollout, what breaks first, and the measurement that would overturn the recommendation.
 
 A design is complete only when:
 
-- every critical flow ends at a named durable or final effect;
+- every critical flow ends at a named durable or final effect in Key Design Decisions;
 - every invariant has one enforcement authority;
-- every dependency has a deadline, retry owner, and bounded backlog;
-- every authoritative store has an acknowledgement point, failure domain, RPO, and RTO;
-- every derived view names its reconstruction source and cursor;
+- every load-bearing dependency has a deadline, retry owner, and bounded backlog in Key Design Decisions;
+- every load-bearing authoritative store has an acknowledgement point, failure domain, RPO, and RTO in a plain-language C4 container description;
+- every load-bearing derived view names its reconstruction source and cursor in its C4 container description;
 - every candidate has a named first failure;
 - every recommendation has a falsifiable evidence chain;
 - every unresolved uncertainty is recorded as an assumption or measurement;
-- all artifacts pass structural and diagram checks.
+- every required SAD section is present or marked `n/a` with a reason;
+- all artifacts pass structural, C4-validity, and diagram checks.
 
 Before writing, verify:
 
-- every queue/log declares delivery and idempotency semantics;
-- every store is source-of-truth or derived;
-- every authoritative store names the recovery path that meets its RPO and RTO;
+- every load-bearing queue/log declares delivery and idempotency semantics in Key Design Decisions;
+- every store shown in a C4Container diagram is source-of-truth or derived;
+- every load-bearing authoritative store names the recovery path that meets its RPO and RTO in its C4 container description;
 - offered load is stated against drain capacity, including the amplification retries add exactly when capacity is lowest;
 - every structured store has an intuitive schema whose fields, keys, indexes, and relationships support its stated access patterns and invariants;
 - every schema and wire-contract change names its compatibility direction and the order in which readers and writers deploy;
@@ -155,25 +156,26 @@ Follow [AUDIT.md](AUDIT.md). The order of its stages is the substance, not the c
 
 Where a subagent primitive exists, run one finder per category and one verifier per lens. Where it does not, run the same stages inline, restating the brief and discarding the previous stage's reasoning at each boundary. Keep finding and judging separate; separation reduces shared context but does not establish independent accuracy.
 
-Write the result into the Architectural debt section of `DESIGN.md`, including what was checked and what could not be established. Findings may seed risks and next steps; they never generate a candidate, and they never become an ADR.
+Write the result into the Architectural debt appendix of `DESIGN.md`, including what was checked and what could not be established. Findings may seed risks and next steps; they never generate a candidate, and they never become an ADR.
 
 The audit is done when every newly confirmed finding cites evidence and passes all four debt tests, every `blocking` finding names by id the invariant or target it violates, and the coverage list names every category examined. Retain historical findings whose current checks are unknown with that limitation visible; do not present them as newly confirmed. Record every check the run could not establish rather than dropping it.
 
 ### 9. Write and verify
 
-`DESIGN.md` is the source of truth, so this step finishes it rather than generating a second artifact from another source. Include the investigation's question outcomes, evidence references, unresolved checks, and freshness limitations. Preserve any user-owned `## Notes` verbatim. Validate all ids, flow references, evidence references, and finding ids using [DESIGN-FORMAT.md](DESIGN-FORMAT.md#verification).
+`DESIGN.md` is the source of truth, so this step finishes it rather than generating a second artifact from another source. Include the investigation's question outcomes, evidence references, unresolved checks, and freshness limitations. Preserve any user-owned `## Notes` verbatim. Validate all diagram aliases, dependency contracts, evidence references, and finding ids using [DESIGN-FORMAT.md](DESIGN-FORMAT.md#verification).
 
-Diagrams are part of the document, not a separate render. Confirm that the recorded `Diagram kind:` is the one used by every Mermaid block, that its reason still holds, and that every diagram alias resolves to a component id in that candidate. If the chosen kind cannot express a branch or an ordering, the table carries it; do not add a second kind.
+Diagrams are part of the document, not a separate render. Confirm that there is one `C4Context` under High-level solution design, one `C4Container` per candidate, and every structure block is C4 with `%% system-in-scope:`, `%% c4-level:`, and `%% legend:` metadata, a title that names the level and scope, and a business-named `System_Boundary`. Run the [C4 generation gates](C4/RULES.md#generation-gates), check against [C4/RULES.md](C4/RULES.md) and [C4/PROFILE.md](C4/PROFILE.md), then run the [regression runbook](C4/CONSTRAINTS.md#4-regression-runbook) and fix every blocker (B) and major (M) finding. The checks: no CDN, protocol, or deployment element at Level 1; no `Container_Boundary` or `Person` inside the boundary; every element has at least one relationship; every internal store has a read and write path or `archiveOnly`; no `Person` connects to an internal store or worker; every boundary-crossing relationship declares transport and auth posture; every diagram alias is declared in the same block and reused consistently; every L2 person and external system exists in L1 with the same alias, label, and description; no alias flips between internal and external; every L2 boundary-crossing relationship rolls up to L1; and every L1 relationship touching the scope is realised by at least one candidate. No flow diagram exists. Do not add a second structure representation or a table.
 
-Then confirm the document survived. Check that the frontmatter parses, the required headings appear in order, every component and flow reference resolves, and every Mermaid block uses the recorded diagram kind. If a renderer or Mermaid preview is available, load the document and inspect the diagrams; if not, say that rendering was not inspected and claim nothing it would have shown. A missing diagram or an unresolved reference is unfinished, not a cosmetic defect.
+Then confirm the document survived. Check that the frontmatter parses, the required SAD headings appear in order, every required section has content or an explicit `n/a` reason, every diagram alias and dependency contract resolves, and every diagram uses its recorded role. Security and regulatory obligations, business-impact KPIs, data classifications, and glossary terms must be present or marked `n/a` with a reason. If a renderer or Mermaid preview is available, load the document and inspect the diagrams; if not, say that rendering was not inspected and claim nothing it would have shown. A missing diagram or an unresolved reference is unfinished, not a cosmetic defect.
 
 When a check does not go as described, act on what you observe:
 
 | You observe | It means | Next |
 |---|---|---|
 | A missing heading or frontmatter field | The document cannot be resumed reliably | Add the heading or field from the skeleton in [DESIGN-FORMAT.md](DESIGN-FORMAT.md), then re-check |
-| A flow step, edge, evidence reference, or finding id that names nothing | A dangling cross-reference | Fix the reference or add the missing record; do not leave the reader to guess |
-| A Mermaid block that uses a different keyword or an undeclared alias | The document mixes diagram kinds or has a dangling alias | Switch the block to the recorded kind, or declare the alias and component |
+| A required SAD section is empty or missing | The document cannot be reviewed against the template | Add the section with real content or `n/a — <reason>`; never leave an empty heading |
+| An alias, edge, evidence reference, or finding id that names nothing | A dangling cross-reference | Fix the reference or add the missing alias; do not leave the reader to guess |
+| A Mermaid block that uses the wrong role or an undeclared alias | Structure is not C4 or an alias is dangling | Convert the block to C4Container or declare the alias and component |
 | No renderer or Mermaid preview | Rendering cannot be inspected | Keep the diagrams, state that rendering was not inspected, and claim nothing it would have shown |
 | A legacy `design.json` is the only record | An old design has not been migrated | Read it into `DESIGN.md`, leave it untouched, and say the document is now the source of truth |
 

@@ -1,7 +1,7 @@
 {
   "name": "system-design-skill",
-  "version": "2.0.0",
-  "description": "Reads a repository as its current architecture, closes the open requirements, runs the capacity math, and compares structurally distinct candidates before recommending one. Writes one durable DESIGN.md, the source of truth, with Mermaid architecture and flow diagrams.",
+  "version": "2.6.0",
+  "description": "Reads a repository as its current architecture, closes the open requirements, runs the capacity math, and compares structurally distinct candidates before recommending one. Writes one durable DESIGN.md, a Solution Architecture & Design document and the source of truth, with Mermaid C4 architecture diagrams.",
   "author": {
     "name": "Yuanlei Hong",
     "url": "https://github.com/ishuiyutian"

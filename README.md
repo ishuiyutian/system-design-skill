@@ -2,7 +2,7 @@
 
 **System design from evidence, not vibes.**
 
-`/system-design` takes you from an incomplete idea or an existing codebase to a defensible architecture decision. It sizes the ask before it starts, and answers small or already-settled questions directly instead of manufacturing a document. When the decision earns the process, it discovers what the repository already proves, asks you only for the requirements it cannot recover, derives the system’s entities, invariants, interfaces, data and consistency model, scale envelope, and critical flows, then fully draws only the candidate architectures the evidence leaves viable. It compares their strengths and weaknesses and recommends one. In an existing repository it also audits what was built against what was intended, and reports the architectural debt between them with a remedy and the evidence behind each finding. Outputs one durable `DESIGN.md` that records the reasoning and can be resumed in future agent sessions, with Mermaid architecture and flow diagrams. Designs with structured persistence include intuitive database schemas—essential fields, keys, relationships, and indexes—rather than executable DDL.
+`/system-design` takes you from an incomplete idea or an existing codebase to a defensible architecture decision. It sizes the ask before it starts, and answers small or already-settled questions directly instead of manufacturing a document. When the decision earns the process, it discovers what the repository already proves, asks you only for the requirements it cannot recover, derives the system’s entities, invariants, interfaces, data and consistency model, scale envelope, and critical flows, then fully draws only the candidate architectures the evidence leaves viable. It compares their strengths and weaknesses and recommends one. In an existing repository it also audits what was built against what was intended, and reports the architectural debt between them with a remedy and the evidence behind each finding. Outputs one durable `DESIGN.md` — a Solution Architecture & Design document with business context, security and compliance, guiding principles, business impact, scope, solution design, data sets and model, key decisions, technology impacts, data classifications, and a glossary in the main body, plus evidence, debt, deep dives, and measurements in appendices. It records the reasoning and can be resumed in future agent sessions, with Mermaid C4 architecture diagrams. Designs with structured persistence include intuitive database schemas—essential fields, keys, relationships, and indexes—rather than executable DDL.
 
 ## Installation
 
@@ -151,7 +151,7 @@ Where the difficulty lives here rather than in the component graph — collabora
 
 A run fully draws the simplest production-viable candidate. It adds a directly comparable candidate only when that candidate survives the envelope and invariants and changes a load-bearing structural, data-model, consistency, cost, or operability axis. An option closed by a requirement, gate, or failure mode remains a one-line rejection instead of a peer section. Three candidates is the ceiling.
 
-Each drawn candidate includes its complete clients, networking, compute, state, queues, external dependencies, connections, flows, operational behavior, migration cost, advantages, and weaknesses. The design chooses one diagram kind—C4 structure, flowchart, or sequence—from context, records why, and uses only that kind; tables carry what the kind cannot show. Swapping one database does not count as a different architecture; swapping the ordering authority or the conflict-resolution model does.
+Each drawn candidate includes its complete clients, networking, compute, state, queues, external dependencies, connections, flows, operational behavior, migration cost, advantages, and weaknesses. Structure is C4: one C4Context for the high-level view and one C4Container per candidate. C4Container wraps the business system in `System_Boundary`; external systems sit outside it. Deployment services such as a CDN, DNS, or load balancer are recorded in Technology Impacts or Key Design Decisions, not drawn as C4 elements. Each block carries scope, level, and legend metadata with a title that names the level and scope. Container descriptions are plain business sentences that name the responsibility and, when load-bearing, the reliability promise. Critical-flow behavior and dependency deadlines, retry owners, and backlog bounds live in Key Design Decisions. Every element has at least one relationship; every internal store has a read and write path or `archiveOnly`; a Person never connects directly to an internal store; and boundary crossings name transport and auth posture. A fact that cannot change the design is omitted. There are no per-candidate component, edge-contract, or flow-step tables. Swapping one database does not count as a different architecture; swapping the ordering authority or the conflict-resolution model does.
 
 After the envelope identifies the protected invariant, the skill loads only the matching archetype pack. It composes packs only for independent invariants and never loads the full pattern catalog by default.
 
@@ -170,7 +170,7 @@ The highest-pressure decisions receive deeper treatment, including:
 - what breaks first;
 - the measurement that would overturn the recommendation.
 
-A run is complete only when critical flows reach named final effects, invariants and ownership are explicit, dependencies and authoritative stores carry bounded failure/recovery contracts, candidates name what fails first, and the recommendation is falsifiable. Unresolved facts remain visible assumptions or measurements, and artifacts must pass structural and diagram checks.
+A run is complete only when critical flows reach named final effects, invariants and ownership are explicit, load-bearing dependencies and authoritative stores carry bounded failure/recovery contracts, candidates name what fails first, and the recommendation is falsifiable. Unresolved facts remain visible assumptions or measurements, and artifacts must pass structural and diagram checks.
 
 ### 9. Audits the architecture that already exists
 
@@ -186,10 +186,10 @@ Greenfield runs skip this entirely. There is no implemented architecture to audi
 
 The skill writes and verifies a single `DESIGN.md`. It carries:
 
-- one recorded diagram kind for the whole design, chosen from C4 structure, flowchart, or sequence, with the reason and the agent's user-escalation rule;
-- diagrams of that one kind for the candidates and the critical flows that earn one;
-- tables for components, dependency contracts, schemas, interfaces, estimates, and ratings;
-- the investigation register and, in repository mode, the debt findings with their evidence and remedies.
+- a SAD main body: context and business objectives, security and compliance, guiding principles, business impact and KPIs, scope, solution design, data sets and data model, key decisions, technology impacts, data classifications, next steps, and glossary and references;
+- appendices for evidence and open questions, critical deep dives, and measurements that could overturn the decision, with the debt register in repository mode;
+- a C4Context high-level view and one C4Container per candidate, with the recorded structure role and reason;
+- tables for schemas, interfaces, estimates, and ratings.
 
 The document is the source of truth. It is plain Markdown with Mermaid blocks, so it renders in GitHub, VS Code, and Obsidian, and a later agent session can resume from it directly.
 
@@ -197,7 +197,7 @@ The document is the source of truth. It is plain Markdown with Mermaid blocks, s
 
 | Artifact | Purpose |
 |---|---|
-| `docs/design/<slug>/DESIGN.md` | The design document and the source of truth: requirements, investigation records, estimates, diagrams, candidates, the recommendation, and, in repository mode, the debt register where an accepted finding stays accepted across runs |
+| `docs/design/<slug>/DESIGN.md` | The SAD document and the source of truth: business context, security and compliance, principles, business impact, scope, solution design, data, decisions, technology impacts, data classifications, glossary, and engineering appendices including, in repository mode, the debt register |
 | `docs/adr/NNNN-<slug>.md` | Offered in repository mode once you pick a winner, so future sessions do not re-litigate it |
 
 Outside a Git repository, `DESIGN.md` is written under `./<slug>/`. When the ask lands below the anti-overengineering gates, nothing is written at all — you get the answer and the gate that closed it.
@@ -227,7 +227,10 @@ The skill is plain Markdown; it ships no runtime, renderer, or generated report:
 | [`INTERVIEW.md`](skills/system-design/INTERVIEW.md) | Requirements frontier and question protocol |
 | [`HEURISTICS.md`](skills/system-design/HEURISTICS.md) | Decision rules, capacity references, and comparison characteristics |
 | [`ARCHETYPES.md`](skills/system-design/ARCHETYPES.md) | Canonical system patterns and failure modes |
-| [`DESIGN-FORMAT.md`](skills/system-design/DESIGN-FORMAT.md) | The `DESIGN.md` contract, investigation register, one-kind diagram choice, and debt register |
+| [`DESIGN-FORMAT.md`](skills/system-design/DESIGN-FORMAT.md) | The SAD `DESIGN.md` contract, section skeleton, investigation and debt appendices, and where C4 diagrams belong |
+| [`C4/CONSTRAINTS.md`](skills/system-design/C4/CONSTRAINTS.md) | The canonical C4 constraint catalogue: IDs, severities, scoping in this skill, and the regression runbook |
+| [`C4/RULES.md`](skills/system-design/C4/RULES.md) | C4 generation gates, Level 1 and Level 2 modeling rules, completeness checks, cross-level and cross-candidate consistency, naming, anti-patterns, and review checklist |
+| [`C4/PROFILE.md`](skills/system-design/C4/PROFILE.md) | Mermaid C4 syntax profile, mechanism vocabulary, text limits, palette, layout, and renderer targets |
 | [`EXAMPLES.md`](skills/system-design/EXAMPLES.md) | Conditional BAD/GOOD contrasts for making a generic first draft operationally specific |
 | [`AUDIT.md`](skills/system-design/AUDIT.md) | Debt taxonomy, the verification pipeline, and the findings that must not be raised |
 

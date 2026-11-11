@@ -16,7 +16,7 @@ This file owns the reusable mechanisms and every decision ladder. [ARCHETYPES.md
 
 ## Evidence and uncertainty
 
-Keep one canonical investigation register in `DESIGN.md`; there is no separate source, summary, or generated view. Record each load-bearing claim as **observed**, **derived**, or **inferred**, with a source locator, scope or revision when available, and limitations. A content locator identifies evidence; it does not authenticate a source or establish the truth of the claim. Keep raw evidence retrievable without repeating its producer.
+Keep one canonical investigation register in the `DESIGN.md` evidence appendix; there is no separate source, summary, or generated view. Record each load-bearing claim as **observed**, **derived**, or **inferred**, with a source locator, scope or revision when available, and limitations. A content locator identifies evidence; it does not authenticate a source or establish the truth of the claim. Keep raw evidence retrievable without repeating its producer.
 
 On resume, re-read the scoped sources, including staged, unstaged, and untracked work. Changed or inaccessible evidence makes dependent conclusions unverified until re-established. Freshness is a judgment from that re-read, not a byte digest or automatic invalidation. A newer contradiction remains visible; an older passing check cannot silently replace it. Preserve historical records and human decisions.
 

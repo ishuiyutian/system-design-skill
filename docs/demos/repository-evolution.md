@@ -35,9 +35,9 @@ Once the recommendation was settled, it audited the system it had started from �
 
 ## Artifacts
 
-Every run writes one document. In repository mode the debt findings live inside `DESIGN.md`, which makes it the register where an accepted finding stays accepted:
+Every run writes one document. In repository mode the debt findings live in the `DESIGN.md` debt appendix, which makes it the register where an accepted finding stays accepted:
 
-- `docs/design/<slug>/DESIGN.md` — the design document and the source of truth, with Mermaid architecture and flow diagrams
+- `docs/design/<slug>/DESIGN.md` — the SAD document and the source of truth, with Mermaid C4 architecture diagrams and repository-mode debt in its appendix
 
 See [examples/design-ticketing](../../examples/design-ticketing/DESIGN.md) for a complete example.
 

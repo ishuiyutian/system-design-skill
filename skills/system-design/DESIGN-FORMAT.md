@@ -2,15 +2,17 @@
 
 The artifact and format contract for [SKILL.md](SKILL.md): the records used from **Establish the current truth** onward, and the one document written at **Write and verify**—`DESIGN.md`, which is the source of truth.
 
+`DESIGN.md` is a Solution Architecture & Design (SAD) document. Its main body is readable by business, security, and engineering stakeholders; the evidence, debt, deep dives, and measurements that justify it live in appendices.
+
 ## Contents
 
 - [The one artifact](#the-one-artifact) · [Frontmatter](#frontmatter) · [Section order](#section-order)
-- [Investigation register](#investigation-register)
-- [Diagram choice](#diagram-choice) — one kind per design, how to choose it, and renderer limits
-- [Component kinds](#component-kinds) — the vocabulary shared by tables and diagrams
-- [Candidate records](#candidate-records) — components, contracts, flows, ratings
-- [Supporting records](#supporting-records) — requirements, estimates, schemas, interfaces
-- [The debt register](#the-debt-register) — repo mode only; the protocol lives in [AUDIT.md](AUDIT.md)
+- [Document skeleton](#document-skeleton) · [Required content by section](#required-content-by-section) · [Legacy migration](#legacy-migration)
+- [Appendix — Evidence and open questions](#appendix--evidence-and-open-questions)
+- [Structure diagrams](#structure-diagrams) — C4Context and C4Container, and renderer limits
+- [Component kinds](#component-kinds) — the C4 element vocabulary
+- [Candidate records](#candidate-records) — structure diagrams, trade-offs, migration, ratings
+- [Appendix — Architectural debt](#appendix--architectural-debt) — repo mode only; the protocol lives in [AUDIT.md](AUDIT.md)
 - [Verification](#verification) · [ADR on decision](#adr-on-decision-repo-mode) · [Vocabulary](#vocabulary)
 
 ## The one artifact
@@ -43,29 +45,137 @@ A run creates a draft skeleton with this frontmatter and the headings below at *
 
 ## Section order
 
-1. **Context** — problem, constraints, repository vocabulary adopted, the code the run read, and accepted conflicts.
-2. **Investigation evidence and open questions** — evidence, questions, unknowns, and checks.
-3. **Architectural debt** — repository mode only, omitted entirely in greenfield. An empty heading claims a survey that never ran.
-4. **Requirements** — FR/NFR tables, top-three characteristics, excluded scope.
-5. **Core entities and invariants**
-6. **Data and consistency model**
-7. **Database schemas**
-8. **System interfaces**
-9. **Estimates**
-10. **Architectures** — opens with `Diagram kind:` and its one-line reason, then one `###` per candidate. Each candidate carries its thesis, diagram, component table, edge table, flows, trade-offs, migration notes, and ratings.
-11. **Comparison and recommendation**
-12. **Critical deep dives**
-13. **Operations and rollout**
-14. **Risks and what breaks first**
-15. **Measurements that could overturn the decision**
-16. **Next steps**
-17. **Notes** — user-owned.
+### Main body
 
-Debt sits beside Context because both describe the system that exists; everything after Requirements describes the one being proposed. Keep it away from Risks: a risk is a future failure with a horizon, a finding is a present defect with a cost.
+1. **Context & Background** — overview, business objectives, stakeholders, constraints, repository vocabulary adopted, the code the run read, and accepted conflicts.
+2. **Security & Regulatory Compliance** — security requirements, compliance obligations, data residency, trust boundaries, and audit evidence.
+3. **Guiding Principles** — architectural and design principles, each with the decision it forces and the test that would show a violation.
+4. **Business Function Impact** — impacted business functions, operational changes, and KPIs with baseline, target, and measurement.
+5. **Scope & Requirements** — in scope, out of scope, FR/NFR tables, top-three characteristics, estimates, and accepted conflicts.
+6. **Solution Design** — current state, future state, high-level solution design, conceptual design, and candidate architectures. Opens with `Structure diagram:` and its reason.
+7. **Data Sets & Data Model** — core entities and invariants, consistency model, schemas, data sets, and data impact or migration.
+8. **Key Design Decisions** — decision log, interface contracts, integrations, integration details and data mapping, mobile/client details, recommendation, and rejected alternatives.
+9. **Technology Impacts** — assumptions, delivery risks and issues, operations and rollout, cost/licensing/team impacts, and what breaks first.
+10. **Data Classifications** — data sets and sensitivity, retention and archival, anonymization, normalization, and exemptions or technical debt.
+11. **Next Steps** — owned actions with a horizon.
+12. **Glossary & References** — project-specific terms and acronyms, plus the documents and sources this design depends on.
 
-## Investigation register
+### Appendices
 
-The register lives in the document; there is no separate runtime and no byte-hash checkpoint. Record each load-bearing claim as **observed**, **derived**, or **inferred**, with a source locator, scope, and limitations. A content locator identifies evidence; it does not authenticate the source or prove the claim.
+- **Appendix — Evidence and open questions** — the investigation register: evidence, questions, unknowns, and checks.
+- **Appendix — Architectural debt** — repository mode only. Omit the heading entirely in greenfield; an empty heading claims a survey that never ran.
+- **Appendix — Critical deep dives** — the two or three decisions under the greatest correctness, cost, or operability pressure.
+- **Appendix — Measurements that could overturn the decision** — the falsification plan for the load-bearing assumptions.
+
+`## Notes` is last and user-owned.
+
+Debt sits in an appendix because it describes the system that exists, while the main body describes the one being proposed. Keep it away from Technology Impacts: a delivery risk is a future failure with a horizon, a finding is a present defect with a cost.
+
+## Document skeleton
+
+```markdown
+---
+date: YYYY-MM-DD
+mode: repo | greenfield
+status: draft
+decided: null
+observed:
+  commit: <sha>
+  uncommittedChanges: false
+---
+
+# <Title>
+
+## Context & Background
+
+## Security & Regulatory Compliance
+
+## Guiding Principles
+
+## Business Function Impact
+
+## Scope & Requirements
+
+## Solution Design
+
+Structure diagram: C4Context + C4Container
+Why: <one line>
+
+## Data Sets & Data Model
+
+## Key Design Decisions
+
+## Technology Impacts
+
+## Data Classifications
+
+## Next Steps
+
+## Glossary & References
+
+## Appendix — Evidence and open questions
+
+## Appendix — Critical deep dives
+
+## Appendix — Measurements that could overturn the decision
+
+## Notes
+```
+
+In repository mode, insert `## Appendix — Architectural debt` between the evidence and critical-deep-dives appendices. In greenfield, omit it.
+
+## Required content by section
+
+A required section stays present and contains content or `n/a — <reason>`. Never leave an empty heading. Only the debt appendix is omitted entirely, and only in greenfield.
+
+| Section | Must contain | `n/a` allowed |
+|---|---|---|
+| Context & Background | project overview; business objectives; stakeholders and decision owners; binding constraints; vocabulary adopted; accepted conflicts | Business objectives or stakeholders only when the system genuinely has none |
+| Security & Regulatory Compliance | security requirements; compliance standards; data residency and trust boundaries; encryption, access control, audit, and abuse controls; evidence or open checks | `n/a — no regulated, personal, or sensitive data` with a reason |
+| Guiding Principles | at least one architectural principle and one design principle; each names a decision it forces and a test or consequence | No |
+| Business Function Impact | impacted functions; operational change; KPIs with baseline, target, and measurement | `n/a — internal component with no business-facing KPI` with a reason |
+| Scope & Requirements | in scope; out of scope; FR/NFR tables; top-three characteristics; estimates with derivations; accepted conflicts | Out-of-scope must state `none` rather than disappear |
+| Solution Design | current state; future state; high-level solution design; conceptual design; C4Context high-level view; C4Container per candidate; the recorded structure role | No |
+| Data Sets & Data Model | core entities and invariants; consistency and conflict resolution; schemas; data sets; data impact and migration | `n/a — no structured state` with a reason |
+| Key Design Decisions | decision log; interface contracts; in-scope and out-of-scope integrations; integration details and data mapping; mobile/client details; recommendation and rejected alternatives | Mobile or integrations only when the system has none |
+| Technology Impacts | assumptions; delivery risks and issues; operations and rollout; cost, licensing, and team impacts; what breaks first | No |
+| Data Classifications | data sets and sensitivity; retention and archival; anonymization; normalization; exemptions and technical debt | `n/a — no data is stored or processed` with a reason |
+| Next Steps | owned actions, each with a horizon | No |
+| Glossary & References | project terms and acronyms; source documents and links | References may state `none` with a reason |
+| Appendix — Evidence and open questions | evidence, questions, unknowns, and checks | No |
+| Appendix — Architectural debt | coverage and findings | Omit the heading entirely in greenfield |
+| Appendix — Critical deep dives | pressure, decision, rejected alternatives, failure mode, evidence | At least one deep dive, or a reason none is needed |
+| Appendix — Measurements that could overturn the decision | measurement, threshold, and action if crossed | At least one measurement, or a reason none is falsifiable |
+
+### Section notes
+
+- **Context & Background** states why the project exists, not just what it builds. Business objectives are outcomes, not features. Stakeholders name who decides and who is affected.
+- **Security & Regulatory Compliance** is not a final checklist. Encryption, tenancy, deletion, retention, and abuse controls can change topology and trust boundaries. Record the obligation, the enforcement point, and the evidence or open check.
+- **Guiding Principles** are only useful when they can reject a design. "Scalable and maintainable" is a slogan; "one authority per invariant, tested by a write path with two owners" is a principle.
+- **Business Function Impact** separates business outcome from technical metric. A KPI states baseline, target, and how it is measured; a target without a baseline is a wish.
+- **Scope & Requirements** carries the FR/NFR tables, exactly three top characteristics, excluded scope, and accepted conflicts. Estimates state assumptions tagged `user` or `assumed`, show derivations, and verify arithmetic with a shell command; a standard metric that does not apply is `n/a` with a reason.
+- **Solution Design** carries the candidate architecture records. Structure is C4Context plus C4Container; the structure diagrams are the record. There are no per-candidate component, edge-contract, or flow-step tables. C4 container descriptions carry load-bearing state contracts. Critical-flow behavior and dependency contracts live in Key Design Decisions. The current state is Architecture 0 in repository mode; in greenfield it states that no implementation exists and names the prompt constraints that stand in for it.
+- **Data Sets & Data Model** carries the entity, consistency, and schema discipline. For each core entity record its representation in memory and at rest, identity scheme, ordering authority, conflict resolution per field class, durability point, and garbage collection or compaction. For each structured store use a human-readable schema card with keys, indexes, relationships, source-of-truth status, and retention; no executable DDL. Data impact names what moves, whether rollback survives writes in the new format, and which records are authoritative.
+- **Key Design Decisions** records the decisions a reviewer would challenge. Each row names the alternative that lost and the evidence or constraint that closed it. For each interface record style and transport, trust boundary, deadline, retry owner, backpressure, consistency and idempotency scope, compatibility direction, and caller-visible failure including `UNKNOWN`. Integration details include data mapping and mobile/client behavior. The recommendation rests on evidence, never on a rating.
+- **Technology Impacts** separates delivery assumptions and project risks from the first technical failure. Cost, licensing, skills, and rollout are architecture inputs when they constrain the design.
+- **Data Classifications** names each data set, its sensitivity, retention, deletion or anonymization rule, normalization rule, and any exemption. Financial, health, and personal data are named explicitly when present.
+- **Glossary & References** is project-specific. It is separate from the skill's internal vocabulary below.
+
+## Legacy migration
+
+A `DESIGN.md` written with the pre-2.1 section order is migrated in place the next time the design is resumed:
+
+1. Map each old heading to the SAD section that now owns its content. `Context` becomes `Context & Background`; `Requirements` and `Estimates` become `Scope & Requirements`; `Architectures` becomes `Solution Design`; `Core entities and invariants`, `Data and consistency model`, and `Database schemas` become `Data Sets & Data Model`; `System interfaces` and `Comparison and recommendation` become `Key Design Decisions`; `Operations and rollout` and `Risks and what breaks first` become `Technology Impacts`.
+2. Move `Investigation evidence and open questions`, `Architectural debt`, `Critical deep dives`, and `Measurements that could overturn the decision` into their appendices.
+3. Add the new required sections with real content or `n/a — <reason>`. Do not invent business objectives, compliance obligations, or KPIs; mark them open and carry them into Next Steps.
+4. Preserve `## Notes` verbatim. Never write a second design document.
+5. Record the migration in Context & Background when it changes the meaning or ordering of a decision.
+
+A `DESIGN.md` written with the pre-2.3 `Diagram kind:` line is migrated in place: replace it with `Structure diagram: C4Context + C4Container`; convert every candidate structure block to `C4Container`; add the one `C4Context` high-level view; remove flow diagrams and carry any load-bearing contract into Key Design Decisions. Do not create a second document.
+
+## Appendix — Evidence and open questions
+
+The register lives in the appendix; there is no separate runtime and no byte-hash checkpoint. Record each load-bearing claim as **observed**, **derived**, or **inferred**, with a source locator, scope, and limitations. A content locator identifies evidence; it does not authenticate the source or prove the claim.
 
 ### Evidence
 
@@ -95,193 +205,142 @@ Question status is `open | partial | answered`; unknown status is `open | resolv
 
 **Freshness is a judgment, not a digest.** On resume, re-read the cited sources, including staged, unstaged, and untracked work, then update `freshness` to `current`, `stale`, or `unknown`. Changed or inaccessible evidence invalidates dependent completed records until it is re-established. There is no automatic invalidation, checkpoint, or recovery command; say what was actually re-read rather than claiming a check that did not run. Missing coverage establishes neither absence nor refutation.
 
-## Diagram choice
+## Structure diagrams
 
-Every candidate needs a readable shape, and a flow gets a diagram only when it earns one. The document uses **one diagram kind for the whole design**, chosen by the agent from context—not a fixed mix.
+The document uses C4 for structure. The constraint catalogue with severities and check types is
+[C4/CONSTRAINTS.md](C4/CONSTRAINTS.md); the modeling rules are [C4/RULES.md](C4/RULES.md) and the
+Mermaid syntax profile is [C4/PROFILE.md](C4/PROFILE.md). There is no diagram-kind choice and no
+flow diagram.
 
-### The kinds
+- **High-level view:** one `C4Context` under High-level solution design.
+- **Candidate view:** one `C4Container` per candidate.
+- **Recorded before the first diagram:**
 
-| Kind | Choose it when | It cannot express |
-|---|---|---|
-| **C4 structure** | The load-bearing question is ownership, boundaries, deployment units, or integrations; flows are secondary | Step order, branches, retries |
-| **Flowchart** | The document must show component topology **and** control flow, branches, retries, or state transitions | Precise time ordering across many actors, though numbered edges approximate it |
-| **Sequence** | The load-bearing question is time-ordered interaction, async handoff, timeout, or retry across a few participants | Static topology, many components, complex branching |
+  ```markdown
+  Structure diagram: C4Context + C4Container
+  Why: <one line>
+  ```
 
-Default when both structure and flow are load-bearing: **flowchart**, because it is the only single kind that carries both.
+Critical-flow behavior and dependency contracts live in **Key Design Decisions**. Do not add a flow diagram, a step table, or a second structure representation.
 
-### How to choose
+Apply the generation gates in [C4/RULES.md](C4/RULES.md#generation-gates) before drawing: title, container admission, typing, one-hop relationships, completeness, then cross-level and cross-candidate checks. After drawing, run the regression in [C4/CONSTRAINTS.md](C4/CONSTRAINTS.md#4-regression-runbook).
 
-1. State the primary question the diagrams must answer: what owns what, what can happen next, or who talks to whom in what order.
-2. Select the one kind whose column answers that question. If the kind cannot carry a secondary dimension, plan a table for it—not a second kind.
-3. If two kinds are genuinely tied and the choice changes what the reader can see, ask the user with a recommended default. If no user is present, take the default and mark it `assumed`.
-4. Record the choice in the document before the first diagram:
+Every C4 block carries the scope, level, and legend header:
 
-   ```markdown
-   Diagram kind: flowchart
-   Why: the candidates differ in topology and the critical flows branch on seat-state transitions.
-   ```
-
-5. Use only that kind for every diagram in the document. A diagram of another kind is a contract defect, not a stylistic choice.
-
-A diagram that only restates the chosen kind is not worth drawing. A simple linear flow gets a step table, and a closed option gets a one-line rejection with no diagram.
-
-**Budget.** One structure diagram per candidate, and one diagram per critical flow. If a candidate has more than three critical flows, the extra flows are step tables unless a diagram is load-bearing.
-
-### C4 structure
-
-When the chosen kind is C4, use `C4Context` once when the system boundary is unclear and `C4Container` per candidate. Use `C4Component` only when one container's internals are the decision, and `C4Deployment` only when placement is the decision. Aliases are the candidate's stable component ids.
-
-- `Person` or `Person_Ext` for end users.
-- `System`/`System_Ext` for a system boundary at context level.
-- `Container`, `ContainerDb`, `ContainerQueue`, and their `_Ext` variants for services, stores, queues, and third parties.
-- `Container_Boundary` or `System_Boundary` for zones.
-- `Rel(from, to, "label", "protocol")` for every edge. Mark `sync` or `async` in the label.
-- `UpdateLayoutConfig` only when the default layout is unreadable.
-
-C4 has a fixed palette, no tags, no links, and no legend. Its layout follows statement order, and `RelIndex` ignores its index and numbers relationships in statement order. Put deadlines, retry owners, backlog bounds, and state contracts in the tables below the diagram, never in the diagram labels. Flows are step tables, not a second diagram kind.
-
-```mermaid
-C4Container
-  title Candidate A — containers
-
-  Person(fan, "Fan", "Browser or mobile app")
-  Container_Boundary(edge, "Edge") {
-    Container(gateway, "Admission gateway", "Signed-token check")
-  }
-  Container_Boundary(app, "Application") {
-    Container(allocator, "Allocator", "Elixir", "Serialises seat transitions")
-  }
-  Container_Boundary(data, "Data") {
-    ContainerDb(seatdb, "Seat database", "Postgres", "Authoritative seat state")
-  }
-  Rel(fan, gateway, "Joins the draw", "HTTPS")
-  Rel(gateway, allocator, "Admits", "sync gRPC")
-  Rel(allocator, seatdb, "Writes seats", "sync SQL")
+```text
+%% system-in-scope: ticketing
+%% c4-level: L1
+%% legend: arrows show initiation; blue owned in scope; grey external; boundary means owned lifecycle and data
 ```
 
-### Flowchart
+Use `L2` in a candidate container block. The alias and business label are identical in the context and every candidate boundary. The rendered title carries the level and scope:
 
-When the chosen kind is flowchart, use `flowchart LR` for request-shaped logic and `flowchart TB` for pipelines. Use `flowchart` for both structure and flows, with zone subgraphs for topology. Keep every alias equal to a component id. Number the steps in edge labels (`1`, `2`, `3`) so the prose table can cite them. Use `-.->` for asynchronous work and a labelled edge for a stream.
-
-```mermaid
-flowchart LR
-  subgraph Edge
-    fan([Fan])
-    gateway[Admission gateway]
-  end
-  subgraph Application
-    allocator[Allocator]
-  end
-  subgraph Data
-    seatdb[(Seat database)]
-  end
-  fan -->|1 join| gateway
-  gateway -->|2 admit| allocator
-  allocator -->|3 conditional update| seatdb
-  allocator -.->|4 release expired| seatdb
+```text
+title Context view - Ticketing system
+title Container view - Ticketing system - Candidate A
 ```
 
-### Sequence
+### C4 Golden Rules
 
-When the chosen kind is sequence, use `sequenceDiagram` with `autonumber` for every flow. Declare participants in flow order. Use `alt`/`else` for accepted, rejected, and timed-out outcomes, `par` for fan-out, `loop` for retries, and `Note over` for an invariant, deadline, idempotency key, or retry owner. Structure is a component table, not a second diagram kind.
+1. First statement is `C4Context` (L1) or `C4Container` (L2). Nothing else, no YAML front-matter. `[S1]`
+2. Metadata comment block precedes the diagram type: `%% c4-level:`, `%% system-in-scope: <alias>`,
+   and `%% legend:` with the arrow convention and ownership rule. `[S1][B1][R5]`
+3. **Every text argument is double-quoted**: `System(alias, "Name", "Description")`. `[S4]`
+4. **No `,` `(` `)` `"` inside any text argument.** Use `;`, `and`, `/`, ` - ` instead.
+   (Mermaid's C4 parser splits on commas and breaks on parentheses.) `[F6]`
+5. Aliases: `[A-Za-z][A-Za-z0-9_]{0,31}`, semantic (`paymentsApi`, not `s1`), never a keyword,
+   identical across L1 and L2. `[E1][X2]`
+6. Statement order: **elements & boundaries → relationships → `UpdateElementStyle`/`UpdateRelStyle` → `UpdateLayoutConfig` (last)**. `[G3]`
+7. One statement per line; 2-space indent; LF; no tabs; no trailing whitespace.
+8. L1: exactly one non-external `System` (the scope); every other system uses `*_Ext`;
+   **no containers, no protocols/technology, no infrastructure**. `[L1][E3][L7]`
+9. L2: exactly one top-level `System_Boundary` whose alias == `system-in-scope`; all containers
+   inside it; people and external systems outside it; **every container declares a technology**;
+   **every relationship declares `<sync|async> <mechanism>`** and a boundary crossing adds
+   `; auth=<posture>`. `[B2][B3][R2][R11]`
+10. Relationships are one hop, directed, and labelled with a verb phrase from the initiator's
+    viewpoint (`"Reads account data from"`), with no step numbers, duplicates, self-loops, or
+    temporal connectives. `[R3][R5][R7][S5]`
+11. Every element has ≥1 relationship. No orphans. `[C1]`
+12. Budget: L1 ≤ 10 elements and ≤ 12 relationships; L2 ≤ 12 containers, ≤ 18 relationships, and
+    ≤ 15 total nodes. Over budget → merge non-distinct containers or simplify; never split this
+    SAD's one-view-per-candidate contract. `[G1][G2]`
+13. Only these style hooks: `UpdateElementStyle`, `UpdateRelStyle`, `UpdateLayoutConfig`.
+    **Never** `classDef`, `style`, `linkStyle`, `click`, `subgraph`, `direction`, `-->`.
+14. Add `accTitle:` and `accDescr:` when the renderer accepts them; keep the C4 palette. `[F7]`
+15. Every internal store has a read and a write edge, or `%% archiveOnly: <alias>; <reason>`. `[C2]`
+16. A `Person` must not connect directly to an internal store or worker. An external system
+    writing an internal store needs `%% exception: <from> -> <to>; <reason>`. `[R9][R10]`
+17. Shared external aliases, labels, and descriptions do not drift between candidates, and no
+    alias flips between internal and external. `[V1][X7]`
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant fan
-  participant gateway
-  participant allocator
-  participant seatdb
-  fan->>gateway: join draw
-  gateway->>allocator: admit
-  allocator->>seatdb: conditional UPDATE
-  alt rows affected
-    seatdb-->>allocator: held
-    allocator-->>fan: HELD
-  else no row
-    seatdb-->>allocator: zero rows
-    allocator-->>fan: SOLD_OUT
-  end
-```
-
-### Cross-references and portability
-
-- Every diagram alias must exist in that candidate's component table, and every flow step must name components that exist.
-- Keep labels short, avoid unescaped `;`, `#`, and unmatched parentheses, and quote labels that contain punctuation.
-- Mermaid has no include or reuse mechanism, so each diagram repeats the aliases it needs. Keep the repetition to ids and short labels; the contracts live in the tables.
-- GitHub, VS Code, and Obsidian render `flowchart` and `sequenceDiagram` reliably. C4 support depends on the Mermaid version in the renderer.
-- If no renderer is available, write the diagrams, verify their syntax against the documented Mermaid grammar, and record rendering as **unknown**—never as passed.
+Full grammar, palette and Mermaid quirks: [C4/PROFILE.md](C4/PROFILE.md).
+Constraint IDs and severities: [C4/CONSTRAINTS.md](C4/CONSTRAINTS.md).
+Modeling rules: [C4/RULES.md](C4/RULES.md).
 
 ## Component kinds
 
-`kind` selects the symbol. The same kind list is used in every candidate. The C4 and flowchart columns describe how that kind renders when one of those families is the chosen diagram kind; when the chosen kind is sequence, the component id is the participant and those columns are unused.
+`kind` selects the C4 element in a structure diagram. The same kind list applies to every candidate.
 
-| kind | C4 element | Flowchart shape | Use for |
-|---|---|---|---|
-| `person` | `Person` / `Person_Ext` | stadium | End users, browsers |
-| `mobile` | `Person` / `Container_Ext` | stadium | Mobile apps |
-| `service` | `Container` | hexagon or rectangle | Stateless app services, monolith modules |
-| `gateway` | `Container` | double-bordered rectangle | API gateways, edge auth |
-| `lb` | `Container` | diamond | Load balancers, traffic routing |
-| `ws` | `Container` | double-bordered hexagon | Persistent-connection gateways |
-| `worker` | `Container` | rounded rectangle | Async workers, consumers |
-| `cron` | `Container` | circle | Schedulers, periodic jobs |
-| `db-sql` | `ContainerDb` | cylinder | Relational stores |
-| `db-nosql` | `ContainerDb` | stacked cylinder | KV, wide-row, document stores |
-| `db-graph` | `ContainerDb` | connected nodes | Graph stores |
-| `cache` | `ContainerDb` | lightning chip | In-memory caches |
-| `queue` | `ContainerQueue` | striped pipe | Queues, task buffers |
-| `stream` | `ContainerQueue` | arrowed log | Replayable logs, event streams |
-| `blob` | `ContainerDb` | bucket | Object storage |
-| `cdn` | `Container` | globe | Edge delivery |
-| `search` | `ContainerDb` | magnifier | Search and inverted indexes |
-| `ml` | `Container` | sparkline chip | Model inference, ranking |
-| `ledger` | `ContainerDb` | double-entry book | Append-only financial records |
-| `monitor` | `Container` | pulse | Observability |
-| `external` | `System_Ext` / `Container_Ext` | plug | Third-party APIs |
+| kind | C4 element | Use for |
+|---|---|---|
+| `person` | `Person` / `Person_Ext` | End users, browsers |
+| `mobile` | `Container` / `Container_Ext` | Mobile apps |
+| `service` | `Container` | Stateless app services, monolith modules |
+| `gateway` | `Container` | API gateways, edge auth |
+| `ws` | `Container` | Persistent-connection gateways |
+| `worker` | `Container` | Async workers, consumers |
+| `cron` | `Container` | Schedulers, periodic jobs |
+| `db-sql` | `ContainerDb` | Relational stores |
+| `db-nosql` | `ContainerDb` | KV, wide-row, document stores |
+| `db-graph` | `ContainerDb` | Graph stores |
+| `cache` | `ContainerDb` | In-memory caches |
+| `queue` | `ContainerQueue` | Queues, task buffers |
+| `stream` | `ContainerQueue` | Replayable logs, event streams |
+| `blob` | `ContainerDb` | Object storage |
+| `search` | `ContainerDb` | Search and inverted indexes |
+| `ml` | `Container` | Model inference, ranking |
+| `ledger` | `ContainerDb` | Append-only financial records |
+| `monitor` | `Container` | Observability |
+| `external` | `System_Ext` | Third-party APIs |
+| `external-db` | `SystemDb_Ext` | Shared data stores you do not own |
+| `external-queue` | `SystemQueue_Ext` | Shared brokers you do not own |
+
+Deployment services such as CDN, DNS, or load balancers are not C4 elements. Record them in **Technology Impacts** or **Key Design Decisions**.
 
 A client-side architecture uses the same kinds: `mobile` or `person` for the shell, `service` for a state owner or sync engine, `db-sql`/`db-nosql` for the on-device store, `cache` for an in-memory tier, `queue` for a mutation outbox, `worker` for background refresh.
 
 ## Candidate records
 
-### Components
+Candidate records live under **Solution Design**. Each candidate carries a C4Container structure diagram, trade-offs, migration, and ratings. There is no per-candidate component table, edge table, flow-step table, or flow diagram.
 
-| id | name | kind | zone | tech | note | state contract | change |
-|---|---|---|---|---|---|---|---|
-| `chat-svc` | Chat service | `service` | app | Elixir | 100k conns/node | — | modified |
-| `msg-store` | Message store | `db-nosql` | data | — | Append-only history | authoritative; ack quorum WAL commit; zones; RPO 0; RTO <60 s; fenced promotion | unchanged |
+A fact is **load-bearing** when removing it could change topology, failure behavior, cost, or the recommendation, or when a completion invariant depends on it. Put load-bearing state contracts in the C4 container description and dependency contracts in **Key Design Decisions**. Omit everything else.
 
-`id` is stable across every architecture in the document. `zone` is `edge | app | data | async | external`. `change` is `added | removed | modified | unchanged` and is omitted in greenfield.
+### Structure
+
+The C4Container diagram is the component record. Its aliases are the component ids; reuse the same container alias for the same component across candidates. Container descriptions carry:
+
+- the component name;
+- its technology only when that explains the design;
+- in repository mode, `added`, `removed`, or `modified` when it changed; omit the marker when unchanged;
+- a plain-language state promise only when the store or view carries an invariant.
+
+`Rel` technology carries `<sync|async> <transport>`; a boundary crossing adds `; auth=<posture>`. Do not put deadlines, retry owners, or backlog bounds in the C4 diagram; they belong in **Key Design Decisions**.
+
+Do not add a component table, an edge-contract table, or a separate state-contract table.
 
 ### State contracts
 
-An authoritative component supplies:
+When a load-bearing authoritative store appears in a C4Container diagram, its container description states in one plain business sentence:
 
-- **acknowledgement** — the exact durable event after which success may be exposed;
-- **failure domain** — the independent failure scope covered by that acknowledgement;
-- **RPO** — maximum acceptable data loss or recovery-point age, scoped by failure;
-- **RTO** — maximum acceptable recovery time, scoped by failure;
-- **recovery** — the tested promotion or restore procedure.
+- what it stores;
+- which acknowledgement is durable;
+- which failure it survives;
+- how it recovers, including the recovery point and time.
 
-A derived component supplies **source** (the complete authoritative reconstruction input) and **cursor** (the durable position proving how far the source has been applied). Do not put `UNKNOWN` in authoritative lifecycle state: authoritative operations use `PENDING | RECONCILING | SUCCEEDED | FAILED | CANCELLED`; `UNKNOWN` is only the caller's observation after an ambiguous timeout.
+Put implementation terms such as WAL fsync, synchronous standby, and fenced promotion in the technology field, not the description. Do not paste a semicolon-delimited contract into the description.
 
-### Edges and dependency contracts
-
-| from | to | kind | label | deadline | retry owner | backlog bound | contract notes |
-|---|---|---|---|---|---|---|---|
-| `lb` | `chat-svc` | sync | WSS | 500 ms of caller budget | load balancer, once with jitter | 2k in-flight calls/instance; shed above it | — |
-
-`kind` is `sync | async | stream`. `deadline` is the caller-visible completion budget for a synchronous edge, or the maximum acceptable age or handoff deadline for an asynchronous or log edge. `retry owner` names exactly one layer or consumer. `backlog bound` names the finite concurrency, queue, retention, or lag bound and the saturation action. `n/a` is valid only when it states why the dimension cannot apply and names the alternative finite bound.
-
-### Flows
-
-Each flow carries an id, a name, the diagram (or a stated reason for none), and a step table.
-
-| seq | from | to | label | note |
-|---|---|---|---|---|
-| 1 | `client` | `lb` | WSS frame | client-generated message id makes retries idempotent |
-
-Critical flows include the happy path and the failure and recovery paths. Every step references component ids present in that candidate.
+A load-bearing derived store's description states what it is rebuilt from and how far it has been applied. If a store or view is not load-bearing, omit it from the diagram. Do not put `UNKNOWN` in authoritative lifecycle state: authoritative operations use `PENDING | RECONCILING | SUCCEEDED | FAILED | CANCELLED`; `UNKNOWN` is only the caller's observation after an ambiguous timeout.
 
 ### Trade-offs, migration, and ratings
 
@@ -293,29 +352,9 @@ Critical flows include the happy path and the failure and recovery paths. Every 
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `current` | 4 | 2 | 3 | 3 | 4 | 4 | 3 | 4 | 3 | 4 | 4 |
 
-## Supporting records
+## Appendix — Architectural debt
 
-### Requirements
-
-FR/NFR tables, excluded scope, `requirements.priorities.top3` (exactly three ratings axes), and accepted conflicts. Every axis in `top3` also appears in the comparison.
-
-### Data model and schemas
-
-For each core entity: representation in memory and at rest, identity scheme, ordering authority, conflict resolution per field class, durability point, and garbage collection or compaction.
-
-For every structured store, give an intuitive, non-executable schema: name each table or collection, list only the fields that explain the design, mark primary, partition, sort, and deduplication keys, and state important indexes, relationships, source-of-truth status, and retention notes. Use human-readable cards; no executable DDL.
-
-### Interfaces
-
-For each boundary: name, style and transport, purpose, trust boundary, deadline, retryability, backpressure, consistency and idempotency scope, compatibility direction, and caller-visible failure result including `UNKNOWN`.
-
-### Estimates
-
-Assumptions tagged `user` or `assumed`, and a table of metric, value, and derivation. Show derivations and verify arithmetic with a shell command. Record a standard metric that does not apply as `n/a` with a one-line reason.
-
-## The debt register
-
-Repository mode only. The protocol—what counts as debt, the pipeline, categories, severity, and identity—lives in [AUDIT.md](AUDIT.md). This section is the storage format.
+Repository mode only. The protocol—what counts as debt, the pipeline, categories, severity, and identity—lives in [AUDIT.md](AUDIT.md). This section is the storage format for the debt register. In greenfield, omit the appendix entirely.
 
 ### Coverage
 
@@ -364,14 +403,19 @@ Identity is `dbt-<pattern>--<sorted component ids>` and nothing else. Read the p
 Before the run is complete, check the document directly:
 
 1. Frontmatter parses as YAML and `mode`, `status`, and `decided` are consistent.
-2. The required headings appear in the stated order, and `Notes` is present.
-3. The document records exactly one diagram kind and gives its reason, and every Mermaid block uses that kind.
-4. Every component id used in a diagram, edge, flow, or finding exists in that candidate's component table.
-5. Every flow step references existing components; every critical flow has a diagram or a stated reason for none.
-6. Every evidence, question, unknown, check, and finding reference resolves.
-7. Every debt finding has a stable id and the merge fields.
-8. Every Mermaid block's aliases resolve.
-9. The document states what was re-read, what was not verified, and which renderer, if any, was used.
+2. The required SAD headings appear in the stated order, `Notes` is present, and every required section has content or `n/a — <reason>`.
+3. The debt appendix is present in repository mode and absent entirely in greenfield.
+4. The document records `Structure diagram: C4Context + C4Container`. Every Mermaid block is C4, carries `%% system-in-scope:`, `%% c4-level:`, and `%% legend:`, has a title that names the level and scope, and no flow diagram exists.
+5. There is exactly one `C4Context` for the document and one `C4Container` per candidate. The context has one scoped `System` and no CDN, protocol, or deployment element. Each C4Container has one business-named `System_Boundary` with the context alias and label, no `Person` or `Container_Boundary` inside it, and no generic `Edge`, `Application`, or `Data` systems. Every C4 alias is declared in that block, and the same container alias names the same component across candidates.
+6. Every C4 block passes the text and rendering rules in [C4/PROFILE.md](C4/PROFILE.md): quoted arguments, no commas, parentheses, or HTML, ASCII titles, length limits, and `<sync|async> <transport>` with auth posture at boundaries.
+7. Every L2 person and external system exists in L1 with the same alias, label, and description. Every L2 boundary-crossing relationship rolls up to L1, and every L1 relationship touching the scope is realised by at least one candidate in the same direction. No alias flips between internal and external across candidates.
+8. Every element has at least one relationship. Every internal store has a read and a write path or `archiveOnly`, no `Person` connects to an internal store or worker, and no external system writes an internal store without a recorded exception.
+9. Key Design Decisions records each load-bearing dependency's deadline, retry owner, and backlog bound, and each critical flow's named durable or final effect. No candidate carries a component, edge-contract, flow-step, or flow diagram.
+10. Every evidence, question, unknown, check, and finding reference resolves.
+11. Every debt finding has a stable id and the merge fields.
+12. Every C4 alias resolves within its block.
+13. Security and regulatory obligations, data classifications, business-impact KPIs, and glossary terms are present or marked `n/a` with a reason.
+14. The document states what was re-read, what was not verified, and which renderer, if any, was used.
 
 Structural checks do not prove the architecture. Semantic review and diagram rendering remain separate results; missing rendering is unknown, not passed.
 
@@ -384,3 +428,5 @@ Offer once, when the user picks a winner: `docs/adr/NNNN-<slug>.md` with Title (
 **Use exactly:** architecture, candidate, component, flow, step, zone, edge, envelope, estimate, characteristic, trade-off, recommendation, finding, debt, severity, remedy, evidence.
 
 **Never substitute:** box, node, block (for component) · path, journey (for flow) · lane, tier, layer (for zone) · option, variant (for candidate — a variant is what fails the distinctness rule) · issue, problem, violation (for finding — a violation names a rule that was broken, which is only one of the seven things a finding can be) · score, rating, grade (for severity — severity is looked up from two axes, and a number implies a precision nothing here has).
+
+Project terms such as CMDB, ITSM, SLA, or a vendor module name belong in **Glossary & References**, not in this internal vocabulary.
