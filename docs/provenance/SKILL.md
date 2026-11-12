@@ -16,7 +16,6 @@ Sources for changed process contracts in [SKILL.md](../../skills/system-design/S
 |---|---|
 | Unchanged HEAD does not identify staged, unstaged, or untracked working-tree bytes | Git working-tree/index/commit distinction; runtime hashes the actual scoped source bytes. |
 | `DESIGN.md` is the working document from the first step, so a later session resumes by reading the file rather than a separate store | Product decision: one source of truth, no generated copy. |
-| A pre-2.1 document is migrated in place to the SAD skeleton, preserving `Notes` | Product decision: changing the template must not create a second source of truth or lose user-owned notes. |
 
 ### 2. Establish the current truth
 

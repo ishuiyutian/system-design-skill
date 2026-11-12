@@ -7,7 +7,7 @@ The artifact and format contract for [SKILL.md](SKILL.md): the records used from
 ## Contents
 
 - [The one artifact](#the-one-artifact) · [Frontmatter](#frontmatter) · [Section order](#section-order)
-- [Document skeleton](#document-skeleton) · [Required content by section](#required-content-by-section) · [Legacy migration](#legacy-migration)
+- [Document skeleton](#document-skeleton) · [Required content by section](#required-content-by-section)
 - [Appendix — Evidence and open questions](#appendix--evidence-and-open-questions)
 - [Structure diagrams](#structure-diagrams) — C4Context and C4Container, and renderer limits
 - [Component kinds](#component-kinds) — the C4 element vocabulary
@@ -21,7 +21,7 @@ The artifact and format contract for [SKILL.md](SKILL.md): the records used from
 |---|---|---|
 | `DESIGN.md` | `docs/design/<slug>/` (git repo) or `./<slug>/` (no repo) | **DESIGN.md is the source of truth.** Every iteration edits this file in place; there is no JSON, rendered report, or generated copy |
 
-A run writes only `DESIGN.md`, and at **Record the decision** the ADR and docs-index link the user accepts. Legacy `design.json` files are read-only migration inputs; never update them and never create new ones.
+A run writes only `DESIGN.md`, and at **Record the decision** the ADR and docs-index link the user accepts.
 
 `## Notes` is user-owned. Preserve it verbatim on every update, and create it empty on first write.
 
@@ -160,18 +160,6 @@ A required section stays present and contains content or `n/a — <reason>`. Nev
 - **Technology Impacts** separates delivery assumptions and project risks from the first technical failure. Cost, licensing, skills, and rollout are architecture inputs when they constrain the design.
 - **Data Classifications** names each data set, its sensitivity, retention, deletion or anonymization rule, normalization rule, and any exemption. Financial, health, and personal data are named explicitly when present.
 - **Glossary & References** is project-specific. It is separate from the skill's internal vocabulary below.
-
-## Legacy migration
-
-A `DESIGN.md` written with the pre-2.1 section order is migrated in place the next time the design is resumed:
-
-1. Map each old heading to the SAD section that now owns its content. `Context` becomes `Context & Background`; `Requirements` and `Estimates` become `Scope & Requirements`; `Architectures` becomes `Solution Design`; `Core entities and invariants`, `Data and consistency model`, and `Database schemas` become `Data Sets & Data Model`; `System interfaces` and `Comparison and recommendation` become `Key Design Decisions`; `Operations and rollout` and `Risks and what breaks first` become `Technology Impacts`.
-2. Move `Investigation evidence and open questions`, `Architectural debt`, `Critical deep dives`, and `Measurements that could overturn the decision` into their appendices.
-3. Add the new required sections with real content or `n/a — <reason>`. Do not invent business objectives, compliance obligations, or KPIs; mark them open and carry them into Next Steps.
-4. Preserve `## Notes` verbatim. Never write a second design document.
-5. Record the migration in Context & Background when it changes the meaning or ordering of a decision.
-
-A `DESIGN.md` written with the pre-2.3 `Diagram kind:` line is migrated in place: replace it with `Structure diagram: C4Context + C4Container`; convert every candidate structure block to `C4Container`; add the one `C4Context` high-level view; remove flow diagrams and carry any load-bearing contract into Key Design Decisions. Do not create a second document.
 
 ## Appendix — Evidence and open questions
 

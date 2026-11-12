@@ -13,6 +13,7 @@ All notable changes to this project are documented here.
 ### Removed
 
 - The parallel rule-catalogue numbering in `RULES.md` (`S/M/R/L1/L2/P/E/B/C/G/X/PR`); cross-level `P` maps to the `X` series and provenance `PR` to the `P` series.
+- The legacy migration path: the pre-2.1 and pre-2.3 `DESIGN.md` migration instructions and the read-only `design.json` migration input. `DESIGN.md` is now created fresh or updated in place, with no migration contract for older artifacts.
 
 ## 2.5.0 — 2026-11-12
 

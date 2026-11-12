@@ -7,7 +7,6 @@ Sources for [DESIGN-FORMAT.md](../../skills/system-design/DESIGN-FORMAT.md). The
 | Claim | Source |
 |---|---|
 | One Markdown document as the source of truth, with no generated copy | Product decision: the artifact a later agent session and a human reviewer both read directly. |
-| Legacy `design.json` is a read-only migration input | Backwards-compatibility decision; no new structured source is created. |
 
 ## Section order
 
@@ -23,20 +22,13 @@ Sources for [DESIGN-FORMAT.md](../../skills/system-design/DESIGN-FORMAT.md). The
 
 | Claim | Source |
 |---|---|
-| A copy-paste skeleton is the canonical new-document shape | Product decision: reduces heading drift and makes resume and migration deterministic. |
+| A copy-paste skeleton is the canonical new-document shape | Product decision: reduces heading drift and makes resume deterministic. |
 
 ## Required content by section
 
 | Claim | Source |
 |---|---|
 | Section contracts name required content and the `n/a` rule | Product decision: a SAD needs business, security, impact, and data-classification content that the earlier engineering record did not require. |
-
-## Legacy migration
-
-| Claim | Source |
-|---|---|
-| A pre-2.1 `DESIGN.md` is migrated in place, preserving `Notes` and never creating a second document | Product decision: changing the template must not fork the source of truth or lose user-owned notes. |
-| A pre-2.3 `DESIGN.md` has its `Diagram kind:` line replaced by the two role lines and its structure blocks converted to C4Container | Product decision: the diagram contract changed without forking the document. |
 
 ## Appendix — Evidence and open questions
 

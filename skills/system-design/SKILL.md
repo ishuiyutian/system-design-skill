@@ -67,7 +67,7 @@ Otherwise derive a kebab-case slug naming the system or subsystem, not the phras
 
 State the mode, reason, whether you resumed, and the target directory in one line.
 
-For a new artifact-producing run, create a draft `DESIGN.md` with the frontmatter and section skeleton defined in [DESIGN-FORMAT.md](DESIGN-FORMAT.md), then fill it in place. `DESIGN.md` is the working document from this step onward; it is the source of truth, not a summary written at the end. Preserve existing designs. A `DESIGN.md` using the pre-2.1 section order is migrated in place to the SAD skeleton, preserving `## Notes` verbatim; never write a second document. A legacy `design.json` is a read-only migration input: read it to seed the Markdown document, never update it, and never create a new one. Keep the direct-answer route artifact-free. Reuse current records, inspect stale ones, and re-read the sources behind any stale evidence before repeating discovery.
+For a new artifact-producing run, create a draft `DESIGN.md` with the frontmatter and section skeleton defined in [DESIGN-FORMAT.md](DESIGN-FORMAT.md), then fill it in place. `DESIGN.md` is the working document from this step onward; it is the source of truth, not a summary written at the end. Preserve existing designs: update the document in place and never write a second one. Keep the direct-answer route artifact-free. Reuse current records, inspect stale ones, and re-read the sources behind any stale evidence before repeating discovery.
 
 ### 2. Establish the current truth
 
@@ -177,7 +177,6 @@ When a check does not go as described, act on what you observe:
 | An alias, edge, evidence reference, or finding id that names nothing | A dangling cross-reference | Fix the reference or add the missing alias; do not leave the reader to guess |
 | A Mermaid block that uses the wrong role or an undeclared alias | Structure is not C4 or an alias is dangling | Convert the block to C4Container or declare the alias and component |
 | No renderer or Mermaid preview | Rendering cannot be inspected | Keep the diagrams, state that rendering was not inspected, and claim nothing it would have shown |
-| A legacy `design.json` is the only record | An old design has not been migrated | Read it into `DESIGN.md`, leave it untouched, and say the document is now the source of truth |
 
 Finish by answering the ask, not by listing files written. Go back to what the user asked for and mark each part answered, partly answered, or open, naming what is still missing. Lead with the recommendation and its evidence chain in a few lines; name the `assumed` inputs it rests on and the measurement that would overturn it; state what was not verified, such as an uninspected diagram render or audit checks the run could not establish; then give the `DESIGN.md` path. End with the decision that belongs to the user, which step 10 records.
 
