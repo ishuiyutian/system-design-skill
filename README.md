@@ -2,7 +2,7 @@
 
 **System design from evidence, not vibes.**
 
-`/system-design` takes you from an incomplete idea or an existing codebase to a defensible architecture decision. It sizes the ask before it starts, and answers small or already-settled questions directly instead of manufacturing a document. When the decision earns the process, it discovers what the repository already proves, asks you only for the requirements it cannot recover, derives the system’s entities, invariants, interfaces, data and consistency model, scale envelope, and critical flows, then fully draws only the candidate architectures the evidence leaves viable. It compares their strengths and weaknesses and recommends one. In an existing repository it also audits what was built against what was intended, and reports the architectural debt between them with a remedy and the evidence behind each finding. Outputs one durable `DESIGN.md` — a Solution Architecture & Design document with business context, security and compliance, guiding principles, business impact, scope, solution design, data sets and model, key decisions, technology impacts, data classifications, and a glossary in the main body, plus evidence, debt, deep dives, and measurements in appendices. It records the reasoning and can be resumed in future agent sessions, with Mermaid C4 architecture diagrams. Designs with structured persistence include intuitive database schemas—essential fields, keys, relationships, and indexes—rather than executable DDL.
+`/system-design` takes a PRD for a change or a new system, or an existing codebase, to a defensible architecture decision. It sizes the ask before it starts, and answers small or already-settled questions directly instead of manufacturing a document. For design and change work it starts from a PRD—Problem Statement, User Stories & Requirements, and Out of Scope—and never guesses product scope. When the decision earns the process, it derives the system's entities, invariants, interfaces, data and consistency model, scale envelope, and critical flows, then fully draws only the candidate architectures the evidence leaves viable. It compares their strengths and weaknesses and recommends one. In an existing repository it also audits what was built against what was intended, and reports the architectural debt between them with a remedy and the evidence behind each finding. Outputs one durable `DESIGN.md` — a Solution Architecture & Design document with business context, scope, solution design, data sets and model, key decisions, technology impacts, data classifications, and a glossary in the main body, plus evidence, debt, deep dives, and measurements in appendices. It records the reasoning and can be resumed in future agent sessions, with Mermaid C4 architecture diagrams. Designs with structured persistence include intuitive database schemas—essential fields, keys, relationships, and indexes—rather than executable DDL.
 
 ## Installation
 
@@ -186,7 +186,7 @@ Greenfield runs skip this entirely. There is no implemented architecture to audi
 
 The skill writes and verifies a single `DESIGN.md`. It carries:
 
-- a SAD main body: context and business objectives, security and compliance, guiding principles, business impact and KPIs, scope, solution design, data sets and data model, key decisions, technology impacts, data classifications, next steps, and glossary and references;
+- a SAD main body: context and business objectives, scope, solution design, data sets and data model, key decisions, technology impacts, data classifications, next steps, and glossary and references;
 - appendices for evidence and open questions, critical deep dives, and measurements that could overturn the decision, with the debt register in repository mode;
 - a C4Context high-level view and one C4Container per candidate, with the recorded structure role and reason;
 - tables for schemas, interfaces, estimates, and ratings.
@@ -197,7 +197,7 @@ The document is the source of truth. It is plain Markdown with Mermaid blocks, s
 
 | Artifact | Purpose |
 |---|---|
-| `docs/design/<slug>/DESIGN.md` | The SAD document and the source of truth: business context, security and compliance, principles, business impact, scope, solution design, data, decisions, technology impacts, data classifications, glossary, and engineering appendices including, in repository mode, the debt register |
+| `docs/design/<slug>/DESIGN.md` | The SAD document and the source of truth: business context, scope, solution design, data, decisions, technology impacts, data classifications, glossary, and engineering appendices including, in repository mode, the debt register |
 | `docs/adr/NNNN-<slug>.md` | Offered in repository mode once you pick a winner, so future sessions do not re-litigate it |
 
 Outside a Git repository, `DESIGN.md` is written under `./<slug>/`. When the ask lands below the anti-overengineering gates, nothing is written at all — you get the answer and the gate that closed it.
@@ -234,15 +234,13 @@ The skill is plain Markdown; it ships no runtime, renderer, or generated report:
 | [`EXAMPLES.md`](skills/system-design/EXAMPLES.md) | Conditional BAD/GOOD contrasts for making a generic first draft operationally specific |
 | [`AUDIT.md`](skills/system-design/AUDIT.md) | Debt taxonomy, the verification pipeline, and the findings that must not be raised |
 
-Everything is inspectable and editable. The skill sends no repository or design data to a service; investigation freshness is a judgment from the current read rather than a byte-hash checkpoint. [Research and limits](docs/research/2026-10-21-harness-lessons.md).
+Everything is inspectable and editable. The skill sends no repository or design data to a service; investigation freshness is a judgment from the current read rather than a byte-hash checkpoint.
 
-Whether an agent reaches for the skill is decided by its description alone. The portable gate is the host-agnostic [`scripts/test-skill-contract.py`](scripts/test-skill-contract.py); live discovery is per-host evidence, and [`scripts/eval-invocation.py`](scripts/eval-invocation.py) is one Claude Code adapter. It sends each prompt in [`docs/evaluations/invocation-cases.json`](docs/evaluations/invocation-cases.json) to a headless Claude Code session that loads only this plugin, and reports which prompts invoked the skill:
+Whether an agent reaches for the skill is decided by its description alone. The portable gate is the host-agnostic [`scripts/test-skill-contract.py`](scripts/test-skill-contract.py):
 
 ```bash
-python3 scripts/eval-invocation.py --runs 3
+python3 scripts/test-skill-contract.py
 ```
-
-Each run stops at the first Skill request or reaches a terminal result within its turn budget. A turn-limit failure, timeout, missing result, or other invalid trial blocks the gate. Unknown costs are reported as unknown. Use `--output-dir <new-directory>` to retain attempts and provenance; `--host user` repeats the check against your installed skills and settings. This evaluates discovery only, not design quality or completed delivery.
 
 ## Support and security
 

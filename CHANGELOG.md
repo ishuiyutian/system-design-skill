@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here.
 
+## 2.7.0 — 2026-11-12
+
+### Added
+
+- A design or change request now starts from a PRD: `SKILL.md` step 1 locates and reads it, and reads its Problem Statement, User Stories & Requirements, and Out of Scope instead of guessing product scope. Without a PRD the run stops and asks for one. Drift audits and code explanations need no PRD.
+- A `prd.md` for the ticketing example and a `DESIGN.md` generated from the English-learning-app PRD.
+
+### Changed
+
+- `Context & Background` is now a plain-language summary, business objectives, and constraints with no technology; the removed content moves to Scope & Requirements and Solution Design.
+- `Scope & Requirements` is sourced from the PRD's stories and out-of-scope list.
+- `INTERVIEW.md` closes only the technical frontier the PRD does not state (workload, targets, consistency, failure modes, top three characteristics); product questions are gone.
+- `README.md` and `CLAUDE.md` describe the PRD-driven entry and the shorter main body.
+
+### Removed
+
+- Security & Regulatory Compliance, Guiding Principles, and Business Function Impact sections from the main body, skeleton, required-content table, and verification checklist.
+
 ## 2.6.0 — 2026-11-12
 
 ### Changed

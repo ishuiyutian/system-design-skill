@@ -47,18 +47,15 @@ A run creates a draft skeleton with this frontmatter and the headings below at *
 
 ### Main body
 
-1. **Context & Background** — overview, business objectives, stakeholders, constraints, repository vocabulary adopted, the code the run read, and accepted conflicts.
-2. **Security & Regulatory Compliance** — security requirements, compliance obligations, data residency, trust boundaries, and audit evidence.
-3. **Guiding Principles** — architectural and design principles, each with the decision it forces and the test that would show a violation.
-4. **Business Function Impact** — impacted business functions, operational changes, and KPIs with baseline, target, and measurement.
-5. **Scope & Requirements** — in scope, out of scope, FR/NFR tables, top-three characteristics, estimates, and accepted conflicts.
-6. **Solution Design** — current state, future state, high-level solution design, conceptual design, and candidate architectures. Opens with `Structure diagram:` and its reason.
-7. **Data Sets & Data Model** — core entities and invariants, consistency model, schemas, data sets, and data impact or migration.
-8. **Key Design Decisions** — decision log, interface contracts, integrations, integration details and data mapping, mobile/client details, recommendation, and rejected alternatives.
-9. **Technology Impacts** — assumptions, delivery risks and issues, operations and rollout, cost/licensing/team impacts, and what breaks first.
-10. **Data Classifications** — data sets and sensitivity, retention and archival, anonymization, normalization, and exemptions or technical debt.
-11. **Next Steps** — owned actions with a horizon.
-12. **Glossary & References** — project-specific terms and acronyms, plus the documents and sources this design depends on.
+1. **Context & Background** — a plain-language summary of the problem, business objectives, and binding constraints. No technology.
+2. **Scope & Requirements** — in scope, out of scope, FR/NFR tables, top-three characteristics, estimates, and accepted conflicts, sourced from the PRD.
+3. **Solution Design** — current state, future state, high-level solution design, conceptual design, and candidate architectures. Opens with `Structure diagram:` and its reason.
+4. **Data Sets & Data Model** — core entities and invariants, consistency model, schemas, data sets, and data impact or migration.
+5. **Key Design Decisions** — decision log, interface contracts, integrations, integration details and data mapping, mobile/client details, recommendation, and rejected alternatives.
+6. **Technology Impacts** — assumptions, delivery risks and issues, operations and rollout, cost/licensing/team impacts, and what breaks first.
+7. **Data Classifications** — data sets and sensitivity, retention and archival, anonymization, normalization, and exemptions or technical debt.
+8. **Next Steps** — owned actions with a horizon.
+9. **Glossary & References** — project-specific terms and acronyms, plus the documents and sources this design depends on.
 
 ### Appendices
 
@@ -87,12 +84,6 @@ observed:
 # <Title>
 
 ## Context & Background
-
-## Security & Regulatory Compliance
-
-## Guiding Principles
-
-## Business Function Impact
 
 ## Scope & Requirements
 
@@ -130,10 +121,7 @@ A required section stays present and contains content or `n/a — <reason>`. Nev
 
 | Section | Must contain | `n/a` allowed |
 |---|---|---|
-| Context & Background | project overview; business objectives; stakeholders and decision owners; binding constraints; vocabulary adopted; accepted conflicts | Business objectives or stakeholders only when the system genuinely has none |
-| Security & Regulatory Compliance | security requirements; compliance standards; data residency and trust boundaries; encryption, access control, audit, and abuse controls; evidence or open checks | `n/a — no regulated, personal, or sensitive data` with a reason |
-| Guiding Principles | at least one architectural principle and one design principle; each names a decision it forces and a test or consequence | No |
-| Business Function Impact | impacted functions; operational change; KPIs with baseline, target, and measurement | `n/a — internal component with no business-facing KPI` with a reason |
+| Context & Background | problem summary; business objectives; binding constraints | Business objectives may state `none` with a reason |
 | Scope & Requirements | in scope; out of scope; FR/NFR tables; top-three characteristics; estimates with derivations; accepted conflicts | Out-of-scope must state `none` rather than disappear |
 | Solution Design | current state; future state; high-level solution design; conceptual design; C4Context high-level view; C4Container per candidate; the recorded structure role | No |
 | Data Sets & Data Model | core entities and invariants; consistency and conflict resolution; schemas; data sets; data impact and migration | `n/a — no structured state` with a reason |
@@ -149,11 +137,8 @@ A required section stays present and contains content or `n/a — <reason>`. Nev
 
 ### Section notes
 
-- **Context & Background** states why the project exists, not just what it builds. Business objectives are outcomes, not features. Stakeholders name who decides and who is affected.
-- **Security & Regulatory Compliance** is not a final checklist. Encryption, tenancy, deletion, retention, and abuse controls can change topology and trust boundaries. Record the obligation, the enforcement point, and the evidence or open check.
-- **Guiding Principles** are only useful when they can reject a design. "Scalable and maintainable" is a slogan; "one authority per invariant, tested by a write path with two owners" is a principle.
-- **Business Function Impact** separates business outcome from technical metric. A KPI states baseline, target, and how it is measured; a target without a baseline is a wish.
-- **Scope & Requirements** carries the FR/NFR tables, exactly three top characteristics, excluded scope, and accepted conflicts. Estimates state assumptions tagged `user` or `assumed`, show derivations, and verify arithmetic with a shell command; a standard metric that does not apply is `n/a` with a reason.
+- **Context & Background** states the problem in plain language, then the business objectives and the constraints that bind the design. It carries no technology, no repositories, and no code—those live in Solution Design and Technology Impacts.
+- **Scope & Requirements** carries the FR/NFR tables, exactly three top characteristics, excluded scope, and accepted conflicts, sourced from the PRD's user stories and out-of-scope list. Estimates state assumptions tagged `user` or `assumed`, show derivations, and verify arithmetic with a shell command; a standard metric that does not apply is `n/a` with a reason.
 - **Solution Design** carries the candidate architecture records. Structure is C4Context plus C4Container; the structure diagrams are the record. There are no per-candidate component, edge-contract, or flow-step tables. C4 container descriptions carry load-bearing state contracts. Critical-flow behavior and dependency contracts live in Key Design Decisions. The current state is Architecture 0 in repository mode; in greenfield it states that no implementation exists and names the prompt constraints that stand in for it.
 - **Data Sets & Data Model** carries the entity, consistency, and schema discipline. For each core entity record its representation in memory and at rest, identity scheme, ordering authority, conflict resolution per field class, durability point, and garbage collection or compaction. For each structured store use a human-readable schema card with keys, indexes, relationships, source-of-truth status, and retention; no executable DDL. Data impact names what moves, whether rollback survives writes in the new format, and which records are authoritative.
 - **Key Design Decisions** records the decisions a reviewer would challenge. Each row names the alternative that lost and the evidence or constraint that closed it. For each interface record style and transport, trust boundary, deadline, retry owner, backpressure, consistency and idempotency scope, compatibility direction, and caller-visible failure including `UNKNOWN`. Integration details include data mapping and mobile/client behavior. The recommendation rests on evidence, never on a rating.
@@ -402,7 +387,7 @@ Before the run is complete, check the document directly:
 10. Every evidence, question, unknown, check, and finding reference resolves.
 11. Every debt finding has a stable id and the merge fields.
 12. Every C4 alias resolves within its block.
-13. Security and regulatory obligations, data classifications, business-impact KPIs, and glossary terms are present or marked `n/a` with a reason.
+13. Data classifications and glossary terms are present or marked `n/a` with a reason.
 14. The document states what was re-read, what was not verified, and which renderer, if any, was used.
 
 Structural checks do not prove the architecture. Semantic review and diagram rendering remain separate results; missing rendering is unknown, not passed.

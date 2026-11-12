@@ -14,7 +14,7 @@ description: >-
 license: MIT
 metadata:
   author: ishuiyutian
-  version: "2.6.0"
+  version: "2.7.0"
 ---
 
 # System Design
@@ -22,6 +22,8 @@ metadata:
 ## Read this first
 
 The frontmatter description decides whether this skill applies. This file decides the run: step 0 sets the depth, step 1 sets the mode, step 8 adds the debt audit in repository mode, and step 9 writes and verifies the document. A direct answer with no artifacts is a valid completion.
+
+A design or change request starts from a PRD, not from an interview. Locate and read the PRD at step 1, and take its Problem Statement, User Stories & Requirements, and Out of Scope as product facts instead of guessing them. Drift audits and explanations of existing code do not need a PRD.
 
 Architecture is decided by invariants, workload numbers, failure modes, and operating constraints—not vibes. Draw the simplest production-viable candidate first, add only evidence-surviving alternatives that differ on a load-bearing axis, recommend one with an evidence chain, and leave a design document another coding-agent session can continue.
 
@@ -43,6 +45,7 @@ Start from what the user brought:
 | An existing design to resume or revise | Step 1 loads it; apply the feedback before any new discovery |
 | A change to this codebase, or an audit of its drift from a recorded design | Step 1 resumes a design that covers it; otherwise the full process in repository mode |
 | A system with no implementation yet | The full process in greenfield mode; step 8 does not run |
+| A design or change request with no PRD | Step 1 stops and asks for one; the skill does not invent product scope |
 | A pick between candidates already written | Step 1 locates the design, then step 10 |
 | An explanation of a technology or existing code, a bug, or a code-level edit | Outside this skill. Answer with ordinary tools and run none of these steps |
 
@@ -55,6 +58,8 @@ This process earns its cost when a decision is hard to reverse, the numbers are 
 When the process does run, draw the simplest production-viable design first. Add a candidate only when it remains viable after the envelope and invariants and changes a load-bearing axis—for example, the measured scale boundary or the dominant correctness, failure-isolation, cost, or operability risk. Record options closed by a requirement, gate, or named failure as one-line rejections; do not draw, rate, or audit them as peers. Three candidates is the ceiling, not a target.
 
 ### 1. Locate and resume
+
+For a design or change request, start from a PRD. Find it from the user's message—a path, an attachment, or a `prd.md` / `PRD.md` in the workspace—and read it. If the ask is a design or change and no PRD exists, stop and ask for one before any design work. The PRD must state a **Problem Statement**, **User Stories & Requirements**, and **Out of Scope**; without these the product facts would have to be guessed, which this skill does not do.
 
 List existing designs—`docs/design/*/DESIGN.md`, or `./*/DESIGN.md` outside a git repo—and read each one's frontmatter `mode`, `status`, and `decided`, plus its H1 title. If one covers this ask, load it and apply the user's feedback before doing new discovery; if two could, name both and ask which.
 
@@ -88,9 +93,18 @@ Record load-bearing observations, derivations, and inferences with source identi
 
 Ask the user only for decisions that cannot be recovered from the repo or prompt.
 
-### 3. Close the requirement frontier
+### 3. Map the PRD and close the technical frontier
 
-Use [INTERVIEW.md](INTERVIEW.md) to fill only the unresolved frontier. Ask numbered questions in at most three rounds of at most eight, each with a recommended default; with no user present to answer, take the defaults instead of asking. Functional scope, excluded scope, business objectives, stakeholders, security and regulatory obligations, data classifications, numerical non-functional targets, workload shape, team/cost constraints, and the top three characteristics must be explicit. Guiding principles and business-impact KPIs are recorded when they can change a decision. Label every assumption.
+Fill the product facts from the PRD, never from guesses:
+
+- **Problem Statement** → the Context & Background summary (who has the problem, what it is, why it is painful), plus any business objectives and constraints the PRD states.
+- **User Stories & Requirements** → the Scope & Requirements functional scope: in-scope flows and the FR table derived from the stories' acceptance criteria.
+- **Out of Scope** → the excluded-scope list.
+- **Constraints & edge cases** → the NFR table and the binding constraints.
+
+Context & Background stays product-shaped: a plain-language summary, business objectives, and constraints. No technology, no repositories, no code.
+
+Then close what the PRD does not say—the numbers that gate the architecture—with a short technical round from [INTERVIEW.md](INTERVIEW.md): workload shape, latency and consistency targets, failure and recovery choices, team/cost constraints, and the top three characteristics. At most one round of at most eight numbered questions, each with a recommended default; with no user present to answer, take the defaults instead of asking and tag every answer `assumed`. Label every assumption.
 
 ### 4. Run and challenge the envelope
 
@@ -166,7 +180,7 @@ The audit is done when every newly confirmed finding cites evidence and passes a
 
 Diagrams are part of the document, not a separate render. Confirm that there is one `C4Context` under High-level solution design, one `C4Container` per candidate, and every structure block is C4 with `%% system-in-scope:`, `%% c4-level:`, and `%% legend:` metadata, a title that names the level and scope, and a business-named `System_Boundary`. Run the [C4 generation gates](C4/RULES.md#generation-gates), check against [C4/RULES.md](C4/RULES.md) and [C4/PROFILE.md](C4/PROFILE.md), then run the [regression runbook](C4/CONSTRAINTS.md#4-regression-runbook) and fix every blocker (B) and major (M) finding. The checks: no CDN, protocol, or deployment element at Level 1; no `Container_Boundary` or `Person` inside the boundary; every element has at least one relationship; every internal store has a read and write path or `archiveOnly`; no `Person` connects to an internal store or worker; every boundary-crossing relationship declares transport and auth posture; every diagram alias is declared in the same block and reused consistently; every L2 person and external system exists in L1 with the same alias, label, and description; no alias flips between internal and external; every L2 boundary-crossing relationship rolls up to L1; and every L1 relationship touching the scope is realised by at least one candidate. No flow diagram exists. Do not add a second structure representation or a table.
 
-Then confirm the document survived. Check that the frontmatter parses, the required SAD headings appear in order, every required section has content or an explicit `n/a` reason, every diagram alias and dependency contract resolves, and every diagram uses its recorded role. Security and regulatory obligations, business-impact KPIs, data classifications, and glossary terms must be present or marked `n/a` with a reason. If a renderer or Mermaid preview is available, load the document and inspect the diagrams; if not, say that rendering was not inspected and claim nothing it would have shown. A missing diagram or an unresolved reference is unfinished, not a cosmetic defect.
+Then confirm the document survived. Check that the frontmatter parses, the required SAD headings appear in order, every required section has content or an explicit `n/a` reason, every diagram alias and dependency contract resolves, and every diagram uses its recorded role. Data classifications and glossary terms must be present or marked `n/a` with a reason. If a renderer or Mermaid preview is available, load the document and inspect the diagrams; if not, say that rendering was not inspected and claim nothing it would have shown. A missing diagram or an unresolved reference is unfinished, not a cosmetic defect.
 
 When a check does not go as described, act on what you observe:
 

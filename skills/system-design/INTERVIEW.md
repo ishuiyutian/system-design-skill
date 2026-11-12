@@ -1,10 +1,10 @@
 # Requirement Frontier
 
-The requirement-closing protocol [SKILL.md](SKILL.md) runs at **Close the requirement frontier**, and the sanity pass it runs at **Run and challenge the envelope**. Used identically in repository and greenfield work. The goal is production clarity, not ceremony.
+The technical-frontier protocol [SKILL.md](SKILL.md) runs at **Map the PRD and close the technical frontier**, and the sanity pass it runs at **Run and challenge the envelope**. The product facts—problem, scope, out-of-scope—come from the PRD; this protocol closes only the technical frontier the PRD does not state. Used identically in repository and greenfield work. The goal is production clarity, not ceremony.
 
 ## Protocol
 
-Start with evidence. In repository mode, pre-fill answers from ADRs, schemas, APIs, telemetry, config, code, and recent history. In greenfield mode, pre-fill everything stated by the prompt. Never ask the user a fact the workspace already answers.
+Start with evidence. In repository mode, pre-fill answers from ADRs, schemas, APIs, telemetry, config, code, and recent history. In greenfield mode, pre-fill everything stated by the PRD. Never ask the user a fact the workspace or the PRD already answers.
 
 Treat unresolved decisions as a dependency tree. The **frontier** is every question whose prerequisites are settled. Each round:
 
@@ -19,21 +19,17 @@ Facts are the agent's job. Decisions with material product, correctness, cost, o
 
 Typical sequence:
 
-- Round 1: scope, actors, business objectives, stakeholders, core flows, entities, invariants, integrations, and workload.
-- Round 2: security, regulatory, and data-classification obligations; measurable targets; failure/consistency choices; team/cost constraints; guiding principles; and the top three characteristics.
-- Round 3: business-impact KPIs, unresolved domain failure modes, build/buy boundaries, rollout constraints, and deep-dive steering.
+One round, at most eight questions: workload, entities and invariants, integrations, measurable targets, failure and consistency choices, team/cost constraints, and the top three characteristics. Product scope is closed by the PRD, not by this round.
 
 ## Question bank
 
 Choose only questions that can change the architecture.
 
-### Scope, domain, and workload
+### Domain and workload
 
 | Question | Why it matters | Recommended default |
 |---|---|---|
-| Which two or three flows are core, and what is explicitly excluded? | Scope determines which architecture is being designed | The smallest complete product loop |
-| What business objectives, impacted functions, and stakeholders define success? | A SAD main body starts with why the system exists and who decides | Derive from the prompt, product docs, or repository; name decision owners and affected functions |
-| Who are the actors and client types? | Trust boundaries and protocols start here | Derive from the repo/product |
+| Who are the actors and client types? | Trust boundaries and protocols start here | Derive from the PRD or repository |
 | Which integrations are in scope, out of scope, and which are contractual? | Integration boundaries and data mapping drive trust and failure contracts | Only integrations on core flows; name the owner of each external contract |
 | What are the core entities? | Ownership and partition boundaries follow the domain model | Entities touched by the core flows |
 | Which invariants must never break? | Correctness drives topology more reliably than component fashion | Money, inventory, identity, ordering, and acknowledged durability first |
@@ -52,10 +48,7 @@ Choose only questions that can change the architecture.
 | After node, region, operator, or corruption loss, which snapshot/backup and log source is authoritative for recovery? | A replica alone does not recover replicated deletion or corruption | Independent verified snapshot plus retained ordered logs for PITR |
 | What ordering and read-your-writes guarantees are actually visible to users? | Scoped guarantees are cheaper and more achievable than global strength | Session or entity-scoped guarantees |
 | Retention, deletion, privacy, abuse, and compliance obligations? | These can change storage, keys, logs, and trust boundaries | Minimise retention and make deletion explicit |
-| Which security, regulatory, and data-classification obligations bind, and where is each enforced? | A compliance claim without an enforcement point is not a design input | Encrypt in transit and at rest, use least-privilege access, classify each data set, and mark inapplicable regimes `n/a` with a reason |
-| Which architectural and design principles are binding? | Principles are useful only when they can reject a design | Derive from the constraints; each principle names the decision it forces and a test that would show a violation |
 | Availability target and failure blast radius? | Nines and isolation have direct cost | 99.9% unless money, safety, or an existing SLO says otherwise |
-| Which business KPIs measure impact, and what are their baseline, target, and measurement? | A KPI without a baseline is a wish, not an outcome | Derive from the objectives; mark an unknown baseline as open rather than inventing one |
 | Which three architecture characteristics matter most? | The top three decide which trade-offs are acceptable; a design that tries to support everything sinks on launch | Derive from [HEURISTICS.md](HEURISTICS.md) |
 | What team, budget, hosting, and rollout constraints are binding? | Operability and migration are architecture inputs | Smallest design the current team can safely run |
 
@@ -73,23 +66,18 @@ Choose only questions that can change the architecture.
 
 ## Completion criterion
 
-Do not draw candidates until the following are explicit or visibly assumed:
+Product scope is closed by the PRD and is not listed here. Do not draw candidates until the technical frontier below is explicit or visibly assumed:
 
 | Section | Must contain |
 |---|---|
-| Business context | Objectives, impacted functions, stakeholders, and decision owners |
-| Functional scope | Core flows, stretch features, and excluded scope |
 | Domain | Core entities, ownership, and invariants |
 | Interfaces | Boundary, transport, consistency, idempotency |
 | Integrations | In scope, out of scope, external owner, and data mapping |
 | Non-functional targets | Numerical targets with units and percentiles |
 | Workload | Average/peak, concurrency, size distributions, burst/skew/fan-out, growth — in the units that gate this system, `n/a` with a reason where one does not apply |
 | Priorities | Top three characteristics, in any order |
-| Principles | Architectural and design principles, each with a decision and a test |
-| Security and compliance | Obligations, enforcement points, data residency, and open checks |
 | Data classification | Data sets, sensitivity, retention, anonymization, normalization, and exemptions |
-| Business impact | KPIs with baseline, target, and measurement |
-| Constraints | Team, cost, hosting, privacy/security, rollout/migration |
+| Constraints | Team, cost, hosting, privacy, rollout/migration |
 | Glossary | Project terms, acronyms, and source documents |
 
 ## Sanity pass

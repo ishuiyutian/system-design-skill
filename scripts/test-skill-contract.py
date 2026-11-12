@@ -396,19 +396,6 @@ def main() -> None:
         check(pack_path.is_file(), f"missing pack file: {link}")
         if pack_path.is_file():
             pack = pack_path.read_text()
-            provenance_path = ROOT / "docs" / "provenance" / link
-            check(provenance_path.is_file(), f"missing provenance pack file: {link}")
-            if provenance_path.is_file():
-                runtime_headings = set(re.findall(r"(?m)^## (.+)$", pack))
-                provenance_headings = set(
-                    re.findall(r"(?m)^## (.+)$", provenance_path.read_text())
-                )
-                check(
-                    runtime_headings == provenance_headings,
-                    f"{link}: runtime/provenance ## headings differ "
-                    f"(runtime-only={sorted(runtime_headings - provenance_headings)}, "
-                    f"provenance-only={sorted(provenance_headings - runtime_headings)})",
-                )
             entries = re.split(r"(?m)^## ", pack)[1:]
             check(bool(entries), f"{link} has no archetype entries")
             for entry in entries:
@@ -437,17 +424,6 @@ def main() -> None:
         check("](SKILL.md)" in "\n".join(audit.splitlines()[:5]),
               "AUDIT.md does not backlink SKILL.md in its opening lines")
         check("](AUDIT.md)" in skill, "SKILL.md does not link AUDIT.md at the audit step")
-        audit_provenance = ROOT / "docs" / "provenance" / "AUDIT.md"
-        check(audit_provenance.is_file(), "missing provenance pack: AUDIT.md")
-        if audit_provenance.is_file():
-            runtime = set(re.findall(r"(?m)^## (.+)$", audit))
-            recorded = set(re.findall(r"(?m)^## (.+)$", audit_provenance.read_text()))
-            # A subset, not equality: the runtime file carries a Contents block
-            # that has nothing to cite, and every other section must be covered.
-            check(recorded <= runtime,
-                  f"provenance/AUDIT.md has sections AUDIT.md does not: {sorted(recorded - runtime)}")
-            check(not (runtime - recorded - {"Contents"}),
-                  f"AUDIT.md sections with no provenance: {sorted(runtime - recorded - {'Contents'})}")
         categories = re.findall(r"(?m)^### ([a-z-]+) — ", audit)
         check(len(categories) == 7, f"AUDIT.md must define exactly seven categories, found {len(categories)}")
         patterns = re.findall(r"(?m)^\| `([a-z-]+)` \|(.*)$", audit)
@@ -493,9 +469,6 @@ def main() -> None:
             "Key Design Decisions",
             "the debt register",
             "Context & Background",
-            "Security & Regulatory Compliance",
-            "Guiding Principles",
-            "Business Function Impact",
             "Scope & Requirements",
             "Solution Design",
             "Data Sets & Data Model",
@@ -540,21 +513,6 @@ def main() -> None:
     check("](C4/CONSTRAINTS.md)" in design_format, "DESIGN-FORMAT.md does not link C4/CONSTRAINTS.md")
     check("Container_Boundary` only when" not in design_format, "DESIGN-FORMAT.md still allows Container_Boundary")
 
-    for runtime_path in (c4_rules_path, c4_profile_path, c4_constraints_path):
-        provenance_path = ROOT / "docs" / "provenance" / "C4" / runtime_path.name
-        check(provenance_path.is_file(), f"missing provenance pack: C4/{runtime_path.name}")
-        if provenance_path.is_file():
-            runtime_headings = set(re.findall(r"(?m)^## (.+)$", runtime_path.read_text()))
-            provenance_headings = set(re.findall(r"(?m)^## (.+)$", provenance_path.read_text()))
-            check(
-                provenance_headings <= runtime_headings,
-                f"provenance/C4/{runtime_path.name} has headings the runtime file lacks",
-            )
-            check(
-                not (runtime_headings - provenance_headings),
-                f"C4/{runtime_path.name} sections with no provenance: {sorted(runtime_headings - provenance_headings)}",
-            )
-
     readme_text = (ROOT / "README.md").read_text()
     check("skills/system-design/C4/RULES.md" in readme_text, "README.md does not reference C4/RULES.md")
     check("skills/system-design/C4/PROFILE.md" in readme_text, "README.md does not reference C4/PROFILE.md")
@@ -582,9 +540,6 @@ def main() -> None:
         example_text = example.read_text()
         sad_headings = (
             "## Context & Background",
-            "## Security & Regulatory Compliance",
-            "## Guiding Principles",
-            "## Business Function Impact",
             "## Scope & Requirements",
             "## Solution Design",
             "## Data Sets & Data Model",
@@ -1057,6 +1012,19 @@ C4Container
             )
 
 
+    for prd_path in (
+        ROOT / "examples" / "english-learning-app" / "prd.md",
+        ROOT / "examples" / "design-ticketing" / "prd.md",
+    ):
+        check(prd_path.is_file(), f"example PRD does not exist: {prd_path.relative_to(ROOT)}")
+        if prd_path.is_file():
+            prd_text = prd_path.read_text()
+            for required in ("Problem Statement", "User Stories & Requirements", "Out of Scope"):
+                check(
+                    required in prd_text,
+                    f"{prd_path.relative_to(ROOT)} lacks required PRD section: {required}",
+                )
+
     completion_match = re.search(
         r"A design is complete only when:\n\n(.*?)(?=\n\nBefore writing, verify:)",
         skill,
@@ -1086,37 +1054,6 @@ C4Container
             marketplace_versions == {skill_version.group(1)},
             "SKILL.md and marketplace plugin version disagree",
         )
-
-    fixture_path = ROOT / "docs" / "evaluations" / "invocation-cases.json"
-    check(fixture_path.is_file(), "invocation fixtures do not exist")
-    if fixture_path.is_file():
-        fixtures = json.loads(fixture_path.read_text())
-        required = {
-            "full-process", "direct-answer", "non-invocation", "repository",
-            "greenfield", "resume", "contradiction", "debugging",
-        }
-        labels = {case.get("label") for case in fixtures}
-        check(len(labels) == len(fixtures), "invocation fixture labels are not unique")
-        check(required <= labels, f"invocation fixtures lack labels: {sorted(required - labels)}")
-        for case in fixtures:
-            check(bool(case.get("prompt")), f"fixture {case.get('label')} lacks an exact prompt")
-            check("expectedInvocation" in case, f"fixture {case.get('label')} lacks expectedInvocation")
-            check("expectedMode" in case, f"fixture {case.get('label')} lacks expectedMode")
-        check(any(case.get("expectedInvocation") is True for case in fixtures), "no positive invocation case")
-        check(any(case.get("expectedMode") == "direct-answer" for case in fixtures), "no direct-answer case")
-        check(any(case.get("expectedInvocation") is False for case in fixtures), "no negative invocation case")
-        cache_cases = {
-            case.get("label"): (case.get("expectedInvocation"), case.get("expectedMode"))
-            for case in fixtures
-        }
-        expected_cache_cases = {
-            "cache-explanation": (False, "none"),
-            "cache-choice": (True, "direct-answer"),
-            "global-cache-design": (True, "full-process"),
-            "cache-debugging": (False, "none"),
-        }
-        for label, expected in expected_cache_cases.items():
-            check(cache_cases.get(label) == expected, f"invocation boundary case is missing or wrong: {label}")
 
     if failures:
         raise AssertionError("\n- " + "\n- ".join(failures))

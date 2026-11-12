@@ -9,68 +9,21 @@ decided: null
 
 ## Context & Background
 
-A ticketing platform for one 60,000-seat venue on-sale across 6 price tiers. Two million fans arrive in the first 60 seconds against a seat writer measured at 300 seat-state transitions per second, holds last 10 minutes, and payment authorization and its webhook are slow, duplicated, and out of order. Zero double-sales, no overbooking, and no fan charged without a seat. Platform-wide the system is tiny — 40 million tickets a year is 2.54 transitions per second — so the whole problem is a burst around an immovable writer with money crossing a third-party boundary.
+One venue, 60,000 seats, sold through a single high-demand on-sale. More fans arrive than there are seats, and each one must leave with a seat or a definite "no" — never a duplicate sale, never a charge without a seat. The whole problem is the moment of the on-sale: a short, extreme burst that a fixed-capacity backend must survive without a double-sale.
 
 ### Business objectives
 
 - Sell out a high-demand on-sale without a double-sale, a charged fan without a seat, or an overbooked venue.
-- Keep the fan experience honest under a 111:1 arrival-to-writer burst: tell 94% of fans their outcome in the first minute instead of holding them in a retry loop.
-- Give the promoter a reproducible admission order and a settlement trail that can survive a dispute months later.
-- Operate the system with one team that can run Postgres, Redis, a CDN, and one payment integration.
-
-### Stakeholders
-
-| Stakeholder | Interest | Decision authority |
-|---|---|---|
-| Fans | Fair access, a seat or a clear answer, no duplicate charge | — |
-| Promoter / venue | Sell-out, contractual hold duration, auditable admission | Owns hold duration and on-sale policy |
-| Finance / settlement | Every captured dollar has a seat and a ledger entry | Owns financial close |
-| Support | Bounded dispute evidence and a resolvable `UNKNOWN` path | — |
-| Engineering / operations | One operable system within the team's skills | Owns the architecture recommendation |
+- Keep the fan experience honest under a burst that far exceeds the number of seats: tell the vast majority of fans their outcome in the first minute instead of holding them in a retry loop.
+- Give the promoter a reproducible admission order and a settlement trail that survives a dispute months later.
+- Operate the system with one team.
 
 ### Constraints
 
-The 300 transitions/s seat writer is a measurement, not a target, and no candidate may assume it moves; the 600 s hold duration is fixed by the promoter contract; single region, multi-AZ, so no cross-region consensus sits on a CP path; one team that can operate Postgres, Redis, a CDN, and one payment integration — not a fleet.
-
-## Security & Regulatory Compliance
-
-The purchase path handles payment instruments through a provider token; the system never stores a PAN. The queue and account paths handle personal data (account id, device attestation, email or wallet address), and the ledger and payment-event records carry financial data.
-
-| Obligation | Applies? | Enforcement point | Evidence / open check |
-|---|---|---|---|
-| PCI DSS | Yes — card data | Provider tokenization; the card number never enters the system; payment adapter and webhook receiver redact card fields at write | Provider tokenization scope needs written confirmation |
-| GDPR / CCPA | Yes — fan personal data | Pseudonymise `account_id` across order, hold, and queue store; delete or anonymize on request except financial-record exemptions | Retention and erasure procedure is specified in Operations and rollout; legal review is open |
-| SOC 2 / ISO 27001 | Assumed — enterprise buyer expectation | Least-privilege access, audit logs, change control, and incident review are operational controls outside this design | Control mapping is not established |
-| HIPAA | No | No protected health information is processed | `n/a — no health data` |
-| Data residency | Yes — single region | Single region, multi-AZ; no cross-region replication on the CP path | Confirm promoter and provider contract terms |
-
-Security requirements: signed admission tokens verified at the edge with no network call; TLS in transit; encryption at rest for the core database and object storage; least-privilege service identities; no card data in logs; webhook signature verification before parsing; per-account and device-attestation limits for abuse. The availability bitmap and drain front are public and carry no personal data.
-
-Trust boundaries: the browser and mobile app are untrusted; the edge verifies signed tokens; the payment provider is an untrusted parser and an external failure domain; the core database is the only authority for seats, holds, orders, payments, and ledger entries.
-
-## Guiding Principles
-
-1. **One authority per invariant.** Seats, holds, orders, payments, and ledger entries are enforced in one transactional authority; a derived view may lag but never decides. Test: a write path with two owners is a design defect.
-2. **Fail closed for money, fail open for browse.** Purchase, authorization, and abuse paths refuse work under uncertainty; the drain front and availability bitmap serve a bounded stale answer. Test: every dependency has a stated failure direction.
-3. **Absorb the burst at the edge, not in the writer.** Admission is a local signature check with zero network calls; the 300/s writer sees only admitted work. Test: an admission decision that calls the writer has failed the principle.
-4. **Buy the commodity edge; build only the admission unit.** CDN, blob storage, and payment integration are bought; the seat-token lease is the one custom quota. Test: a custom component must own the invariant no bought service can express.
-5. **Make the tail a product lever before an infrastructure project.** Conversion and explicit release move t99 more than a faster writer. Test: a candidate that spends complexity on 12% of the tail must say why.
-6. **Every number is falsifiable.** An assumed conversion, provider quota, or writer cause is recorded with the measurement that would overturn it. Test: no recommendation rests on an unlabelled assumption.
-
-## Business Function Impact
-
-The on-sale is the business function: it converts demand into sold seats and settlement without a P0 incident.
-
-| Function | Change | KPI | Baseline | Target | Measurement |
-|---|---|---|---|---|---|
-| On-sale admission | Fans get a terminal answer early instead of retrying | Fans told by t≈60 s | Not measured; no waiting room today | 94% | Queue outcome timestamps |
-| Seat purchase | One transactional authority replaces a best-effort write path | Double-sales per on-sale | Unknown; P0 | 0 | Nightly seat and ledger audit |
-| Checkout | Durable payment lock and reconciler own ambiguity | Charged-without-seat incidents | Unknown; P0 | 0 | Reconciler and ledger audit |
-| Tail time | Conversion and explicit release move the tail | t99 sell-out | 2,149 s modelled at 70% conversion | ≤1,551 s at 60% release adoption | Fluid simulation, then live on-sale |
-| Settlement | Ledger is written with capture | Captured dollars with a seat | Not measurable today | 100% | Nightly `sum(credits) = count(SOLD) × price` |
-| Support | `UNKNOWN` has an owner and a service level | Open `UNKNOWN` count | Not measurable today | ≤50 open; resolved in 5 min | Paging alarm |
-
-Operational impact: the promoter gets a reproducible admission order; finance gets a settlement audit; support gets bounded dispute evidence; engineering gets one operable system. KPI targets are assumptions where the baseline does not exist; the first live on-sale is the measurement.
+- Zero double-sales and no fan charged without a seat are non-negotiable.
+- The hold duration is fixed by the promoter contract.
+- Single region, multi-AZ — no cross-region coordination may sit on the purchase path.
+- One team must be able to run the system.
 
 ## Scope & Requirements
 
