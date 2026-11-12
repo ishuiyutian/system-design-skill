@@ -97,18 +97,17 @@ Ask the user only for decisions that cannot be recovered from the repo or prompt
 
 Fill the product facts from the PRD, never from guesses:
 
-- **Problem Statement** → the Context & Background summary (who has the problem, what it is, why it is painful), plus any business objectives and constraints the PRD states.
-- **User Stories & Requirements** → the Scope & Requirements functional scope: in-scope flows and the FR table derived from the stories' acceptance criteria.
+- **Problem Statement** → the Context & Background summary (who has the problem, what it is, why it is painful), plus the business objectives and constraints the PRD states.
+- **User Stories & Requirements** → the Scope & Requirements FR table, one row per requirement, each naming its source story. Scope & Requirements carries in scope, out of scope, and the FR table and nothing else.
 - **Out of Scope** → the excluded-scope list.
-- **Constraints & edge cases** → the NFR table and the binding constraints.
 
-Context & Background stays product-shaped: a plain-language summary, business objectives, and constraints. No technology, no repositories, no code.
+Context & Background stays product-shaped: a plain-language summary, business objectives, and constraints. No technology, no repositories, no code, and nothing else.
 
-Then close what the PRD does not say—the numbers that gate the architecture—with a short technical round from [INTERVIEW.md](INTERVIEW.md): workload shape, latency and consistency targets, failure and recovery choices, team/cost constraints, and the top three characteristics. At most one round of at most eight numbered questions, each with a recommended default; with no user present to answer, take the defaults instead of asking and tag every answer `assumed`. Label every assumption.
+Then close what the PRD does not say—the numbers that gate the architecture—with a short technical round from [INTERVIEW.md](INTERVIEW.md): workload shape, latency and consistency targets, failure and recovery choices, team/cost constraints, and the top three characteristics. At most one round of at most eight numbered questions, each with a recommended default; with no user present to answer, take the defaults instead of asking and tag every answer `assumed`. These are design inputs, not a requirements section; record the ones that change a decision where they are used. Label every assumption.
 
 ### 4. Run and challenge the envelope
 
-Compute the numbers that gate *this* system. For request-serving systems that is average and peak QPS, storage growth, bandwidth, cache footprint, concurrency, and the domain's load-bearing distribution (burst, skew, fan-out, hot keys, object sizes). Where the binding constraint sits on a device, compute it in the units that bind there: bytes and round trips per session, request volume against provider quotas and their cost, memory ceiling in a process the OS can kill, on-device storage growth, cold-start budget, and offline divergence window. Where money crosses a boundary, compute the unit economics of the events the design protects. Record any standard metric that does not apply as `n/a` with a one-line reason; never invent a number to fill a row. Show derivations and verify arithmetic with a shell command.
+Compute the numbers that gate *this* system. For request-serving systems that is average and peak QPS, storage growth, bandwidth, cache footprint, concurrency, and the domain's load-bearing distribution (burst, skew, fan-out, hot keys, object sizes). Where the binding constraint sits on a device, compute it in the units that bind there: bytes and round trips per session, request volume against provider quotas and their cost, memory ceiling in a process the OS can kill, on-device storage growth, cold-start budget, and offline divergence window. Where money crosses a boundary, compute the unit economics of the events the design protects. Never invent a number to fill a gap; state a load-bearing number where it is used and show its derivation.
 
 Run the physics/CAP sanity pass in [INTERVIEW.md](INTERVIEW.md). Use the compact router in [ARCHETYPES.md](ARCHETYPES.md) to select by protected invariant, then load only the selected pack. Do not load every pack by default. Test the envelope against each selected archetype's **Shape**, and its **Numbers anchor** where it has one. An archetype whose **Not when** clause fires is the wrong match—drop it and say so, rather than importing machinery this system does not need. Resolve contradictions before drawing candidates.
 
@@ -132,7 +131,7 @@ Draw structure with C4. Use the [C4 constraint catalogue](C4/CONSTRAINTS.md) as 
 
 ### 7. Decide and deep-dive
 
-Rate every candidate using [HEURISTICS.md](HEURISTICS.md), led by the user's top three characteristics. Recommend one with a chained evidence argument. A rating may not appear in that chain—it is a candidate's opinion of itself. The chain rests on an envelope number, an invariant, or a named failure mode.
+Compare every candidate against the envelope, invariants, and named failure modes, led by the user's top three characteristics. Recommend one with a chained evidence argument that rests on an envelope number, an invariant, or a named failure mode. Record the winner and the comparison in one table under a **Recommended architecture** subsection of Solution Design, with every option's pros and cons side by side.
 
 Record the decisions a reviewer would challenge in the Key Design Decisions section: the decision log, interface contracts, in-scope and out-of-scope integrations, integration details and data mapping, and mobile/client details. Resolve the two or three decisions with the greatest correctness, cost, or operability pressure. Each deep dive must record pressure, decision, rejected alternatives, failure mode, and evidence. State retries, timeouts, idempotency, reconciliation, failover, observability, rollout, what breaks first, and the measurement that would overturn the recommendation.
 

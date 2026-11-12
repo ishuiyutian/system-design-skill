@@ -466,20 +466,9 @@ def main() -> None:
             "C4Container",
             "System_Boundary",
             "plain business sentence",
-            "Key Design Decisions",
-            "the debt register",
             "Context & Background",
             "Scope & Requirements",
             "Solution Design",
-            "Data Sets & Data Model",
-            "Key Design Decisions",
-            "Technology Impacts",
-            "Data Classifications",
-            "Glossary & References",
-            "Appendix — Evidence and open questions",
-            "Appendix — Architectural debt",
-            "Appendix — Critical deep dives",
-            "Appendix — Measurements that could overturn the decision",
             "n/a — <reason>",
             "the c4container diagram is the component record",
             "do not add a component table",
@@ -542,15 +531,6 @@ def main() -> None:
             "## Context & Background",
             "## Scope & Requirements",
             "## Solution Design",
-            "## Data Sets & Data Model",
-            "## Key Design Decisions",
-            "## Technology Impacts",
-            "## Data Classifications",
-            "## Next Steps",
-            "## Glossary & References",
-            "## Appendix — Evidence and open questions",
-            "## Appendix — Critical deep dives",
-            "## Appendix — Measurements that could overturn the decision",
             "## Notes",
         )
         for heading in sad_headings:
@@ -1013,7 +993,6 @@ C4Container
 
 
     for prd_path in (
-        ROOT / "examples" / "english-learning-app" / "prd.md",
         ROOT / "examples" / "design-ticketing" / "prd.md",
     ):
         check(prd_path.is_file(), f"example PRD does not exist: {prd_path.relative_to(ROOT)}")

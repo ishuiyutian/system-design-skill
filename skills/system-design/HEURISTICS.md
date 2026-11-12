@@ -11,7 +11,7 @@ This file owns the reusable mechanisms and every decision ladder. [ARCHETYPES.md
 - Decision rules: [Data model](#data-model) · [Storage engine](#storage-engine) · [Schema and encoding evolution](#schema-and-encoding-evolution) · [Caching](#caching)
 - [Replication and consistency](#replication-and-consistency) · [State survival and recovery](#state-survival-and-recovery) · [Partitioning](#partitioning) · [Transactions](#transactions) — the ladders live here, not in the archetypes
 - [Async and streaming](#async-and-streaming) · [Interfaces and dependency contracts](#interfaces-and-dependency-contracts) · [Scaling substrate](#scaling-substrate)
-- [Style ratings matrix](#style-ratings-matrix) — priors for generating candidates, never evidence for one
+- [Style selection](#style-selection) — which style to reach for, and when to split
 - [Anti-overengineering gates](#anti-overengineering-gates) — cite when a candidate outruns its envelope
 
 ## Evidence and uncertainty
@@ -131,24 +131,11 @@ Discipline: round aggressively (99,987/9.1 → 100,000/10) · label every unit �
 ### Scaling substrate
 The default evolution order, so candidates do not skip steps: single box → split web/data tiers → load balancer + stateless web tier (session state externalised; sticky sessions are the anti-pattern) → DB replication → cache + CDN → multi-DC with geoDNS → queues to decouple → shard the data tier. Redundancy at every tier; monitor and automate from the start.
 
-## Style ratings matrix
+## Style selection
 
-Per-style ratings, 1–5 (cost: 5 = cheapest). These rows are **priors, not scores**: start from the row for the candidate's style, then move every cell this design's components, envelope, or failure modes justify moving, and say why in its `tradeoffs`. Architecture 0 is rated the same way. The top-3 characteristics decide which columns dominate.
+Selection rules: one characteristic set for the whole system → a monolith family (layered for small/simple, **modular monolith** for domain-first). Differing characteristics per part → distributed; **quantum analysis** (independently deployable + own data + async seams) tells you where the split earns itself. Service-based is the pragmatic distributed default — ACID inside coarse services, no saga tax. Event-driven for reactive scale and extensibility; broker topology for decoupling, mediator for workflow control. Space-based for extreme bursty concurrency (>10k concurrent, ticketing-shaped). Microservices only with differing per-workflow characteristics AND mature automation.
 
-| Style | Partition | Quanta | Deploy | Elast | Evolv | FaultTol | Modul | Cost | Perf | Reliab | Scal | Simpl | Test |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Layered monolith | Technical | 1 | 1 | 1 | 1 | 1 | 1 | 5 | 2 | 3 | 1 | 5 | 2 |
-| Modular monolith | Domain | 1 | 2 | 1 | 3 | 1 | 4 | 5 | 3 | 3 | 1 | 4 | 3 |
-| Pipeline | Technical | 1 | 2 | 1 | 3 | 1 | 3 | 5 | 2 | 3 | 1 | 5 | 3 |
-| Microkernel | Dom+Tech | 1 | 3 | 1 | 3 | 1 | 3 | 5 | 3 | 3 | 1 | 4 | 3 |
-| Service-based | Domain | 1..n | 4 | 2 | 3 | 4 | 4 | 4 | 3 | 4 | 3 | 3 | 4 |
-| Event-driven | Technical | 1..n | 3 | 5 | 5 | 5 | 4 | 3 | 5 | 3 | 5 | 1 | 2 |
-| Space-based | Dom+Tech | 1..n | 3 | 5 | 3 | 3 | 3 | 2 | 5 | 4 | 5 | 1 | 1 |
-| Microservices | Domain | 1..n | 5 | 5 | 5 | 4 | 5 | 1 | 2 | 4 | 5 | 1 | 4 |
-
-Selection rules: one characteristic set for the whole system → a monolith family (layered for small/simple, **modular monolith** for domain-first). Differing characteristics per part → distributed; **quantum analysis** (independently deployable + own data + async seams) tells you where the split earns itself. Service-based is the pragmatic distributed default — ACID inside coarse services, no saga tax. Event-driven for reactive scale and extensibility; broker topology for decoupling, mediator for workflow control. Space-based for extreme bursty concurrency (>10k concurrent, ticketing-shaped). Microservices only with differing per-workflow characteristics AND mature automation — its 1-star cells are cost and simplicity, and they are honest.
-
-Candidate-generation stance: fully draw the simplest production-viable candidate first. Add a measured-scale-boundary or dominant-risk alternative only when it survives the envelope and changes a load-bearing structural, data, or async axis. Keep a closed option as a one-line rejection, never refill its slot, and stop after three. Rate every drawn candidate honestly — one with no 1-star cell has not been examined, and one whose every cell equals its style row has been looked up, not rated.
+Candidate-generation stance: fully draw the simplest production-viable candidate first. Add a measured-scale-boundary or dominant-risk alternative only when it survives the envelope and changes a load-bearing structural, data, or async axis. Keep a closed option as a one-line rejection, never refill its slot, and stop after three.
 
 ## Anti-overengineering gates
 

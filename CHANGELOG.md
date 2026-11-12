@@ -7,14 +7,17 @@ All notable changes to this project are documented here.
 ### Added
 
 - A design or change request now starts from a PRD: `SKILL.md` step 1 locates and reads it, and reads its Problem Statement, User Stories & Requirements, and Out of Scope instead of guessing product scope. Without a PRD the run stops and asks for one. Drift audits and code explanations need no PRD.
-- A `prd.md` for the ticketing example and a `DESIGN.md` generated from the English-learning-app PRD.
+- A `prd.md` for the ticketing example.
+- `Solution Design` ends with a `Recommended architecture` section that names the winning option and carries one comparison table of every option's pros and cons.
+- Removed candidate ratings. The comparison table now compares options on pros and cons only, the style ratings matrix is gone, and no score is presented without a derivation.
 
 ### Changed
 
-- `Context & Background` is now a plain-language summary, business objectives, and constraints with no technology; the removed content moves to Scope & Requirements and Solution Design.
-- `Scope & Requirements` is sourced from the PRD's stories and out-of-scope list.
+- `Context & Background` is now only a plain-language summary, business objectives, and constraints, with no technology.
+- `Scope & Requirements` is now only in scope, out of scope, and an FR table where every requirement names its source; NFR tables, characteristics, estimates, and conflicts are no longer sections there.
 - `INTERVIEW.md` closes only the technical frontier the PRD does not state (workload, targets, consistency, failure modes, top three characteristics); product questions are gone.
-- `README.md` and `CLAUDE.md` describe the PRD-driven entry and the shorter main body.
+- `README.md` and `CLAUDE.md` describe the PRD-driven entry and the trimmed scope.
+- The main body is staged: only `Context & Background`, `Scope & Requirements`, and `Solution Design` are active; the other SAD sections and appendices are commented out in the format and the examples until each is confirmed.
 
 ### Removed
 

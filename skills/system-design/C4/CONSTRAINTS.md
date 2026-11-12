@@ -50,7 +50,7 @@ Adapted realization notes:
 - **P4** anti-gaming: a completeness check may not be satisfied by inventing an edge.
 - **P5** invariants trace to a requirement, not model inference.
 - **V2** delta: each candidate's prose states the decision-relevant delta against the baseline.
-- **V3** comparison: ratings plus trade-offs prose is the comparison table; ratings are not evidence.
+- **V3** comparison: pros-and-cons prose is the comparison table; a bare score is not evidence.
 - **O6** unsatisfiable constraints are reported, never silently dropped.
 - **O7** repair feedback is rule ID + offending object + concrete fix.
 

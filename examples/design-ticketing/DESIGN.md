@@ -9,7 +9,7 @@ decided: null
 
 ## Context & Background
 
-One venue, 60,000 seats, sold through a single high-demand on-sale. More fans arrive than there are seats, and each one must leave with a seat or a definite "no" — never a duplicate sale, never a charge without a seat. The whole problem is the moment of the on-sale: a short, extreme burst that a fixed-capacity backend must survive without a double-sale.
+One venue, 60,000 seats, sold through a single high-demand on-sale. More fans arrive than there are seats, and each one must leave with a seat or a definite "no" — never a duplicate sale, never a charge without a seat. The whole problem is the moment of the on-sale: a short, extreme burst of demand that the business cannot serve one fan at a time.
 
 ### Business objectives
 
@@ -22,101 +22,31 @@ One venue, 60,000 seats, sold through a single high-demand on-sale. More fans ar
 
 - Zero double-sales and no fan charged without a seat are non-negotiable.
 - The hold duration is fixed by the promoter contract.
-- Single region, multi-AZ — no cross-region coordination may sit on the purchase path.
+- One region; the purchase path must not depend on cross-region coordination.
 - One team must be able to run the system.
 
 ## Scope & Requirements
 
 ### In scope
 
-The product loop is admission, hold, checkout, payment, entitlement, reconciliation, and release. The functional requirements below define the scope; the estimates that follow are the envelope, not targets.
-
-### Functional requirements
-
-| id | Functional requirement | Priority |
-|---|---|---|
-| fr-1 | Queue and admit: a fan arrives, receives a draw position, and is admitted to purchase or told no | core |
-| fr-2 | Select and hold: an admitted fan holds seats for up to 600 s | core |
-| fr-3 | Pay and finalize: authorize, assign seats in one atomic transaction, capture, issue entitlement | core |
-| fr-4 | Release: explicit release and expiry-driven reaping back to AVAILABLE | core |
-| fr-5 | Reconcile: every payment reaches a terminal state and every captured dollar has a seat behind it | core |
-| fr-6 | Non-authoritative live availability: seat map plus per-tier counters | core |
-| fr-7 | Fan picks a specific seat rather than accepting best-available | stretch |
-
-### Non-functional requirements
-
-| Axis | Target | Rationale |
-|---|---|---|
-| correctness | no seat is SOLD to two orders; SOLD + HELD + BLOCKED + AVAILABLE = 60,000 per event at all times | user-stated invariant; the seat table *is* the count, so there is no separate counter to drift |
-| correctness | no fan is charged without a seat (P0), and no seat is SOLD without money | user-stated P0; 33 candidate incidents per on-sale at a 0.1% rate makes the machinery earned |
-| throughput | 300 seat-state transitions/s sustained — a measured ceiling, not a target | every decision is sized against it rather than trying to raise it |
-| elasticity | absorb 33,333 arrivals/s for 60 s and 50,000 sustained read QPS while the writer stays at 300/s | arrivals exceed writer capacity 111:1; the burst is the whole problem |
-| latency | the admission decision is a local signature check with zero network calls; 94% of arrivals get a terminal answer by t≈60 s | a limiter that calls out to decide has become the overload it was built to prevent |
-| durability | zero committed transactions lost on one-AZ loss; RPO ≤ 60 s and RTO ≤ 30 min for whole-region loss | acknowledgement is WAL fsync plus synchronous standby apply, so no earlier acknowledgement exists to lose |
-| auditability | admission order is re-derivable from a persisted seed months after the on-sale | a disputed on-sale must be reproducible; a seed is cheaper than a replayable command journal |
-| availability | purchase chain is 99.740% serial; the published number is failover seconds inside the on-sale window, not annual nines | 0.9999 × 0.9995 × 0.9990 × 0.9990 — a 99.99% purchase-flow claim would be arithmetically false |
-
-### Top three characteristics
-
-Top three characteristics: **reliability**, **elasticity**, **simplicity** (assumed, extracted from the domain). Three invariants including a P0 make correctness under partial failure the product. A 118:1 peak-to-average write ratio and a 26,000:1 arrival burst against a 2.54 transitions/s steady state is elasticity, which is a different property from scalability and the one bursty domains need. One team that cannot operate a fleet makes simplicity load-bearing. Deliberately *not* in the top three: raw performance, because the writer is fixed at 300/s and no performance work may move it, and scalability, because there is nothing to scale.
+The product loop is admission, hold, checkout, payment, entitlement, reconciliation, and release.
 
 ### Out of scope
 
-Out of scope: dynamic and surge pricing · secondary market, resale, and fan-to-fan transfer · venue seat-map authoring and CAD · gate scanning hardware and offline turnstile validation (the entitlement token format is in scope, the scanner is not) · scalper and bot detection models (the enforcement hooks are in scope: per-account limits, device attestation slot, admission-token binding) · refunds, exchanges, and post-event customer service · multi-currency, tax, and promoter settlement · the pre-sale and verified-fan qualification funnel that runs days earlier.
+Dynamic and surge pricing · secondary market, resale, and fan-to-fan transfer · venue seat-map authoring and CAD · gate scanning hardware and offline turnstile validation (the entitlement token format is in scope, the scanner is not) · scalper and bot detection models (the enforcement hooks are in scope: per-account limits, device attestation slot, admission-token binding) · refunds, exchanges, and post-event customer service · multi-currency, tax, and promoter settlement · the pre-sale and verified-fan qualification funnel that runs days earlier.
 
-### Accepted conflicts
+### Functional requirements
 
-Accepted conflicts:
+| id | Functional requirement | Source | Priority |
+|---|---|---|---|
+| fr-1 | Queue and admit: a fan arrives, receives a draw position, and is admitted to purchase or told no | PRD fr-1 | core |
+| fr-2 | Select and hold: an admitted fan holds seats for up to 600 s | PRD fr-2 | core |
+| fr-3 | Pay and finalize: authorize, assign seats in one atomic transaction, capture, issue entitlement | PRD fr-3 | core |
+| fr-4 | Release: explicit release and expiry-driven reaping back to AVAILABLE | PRD fr-4 | core |
+| fr-5 | Reconcile: every payment reaches a terminal state and every captured dollar has a seat behind it | PRD fr-5 | core |
+| fr-6 | Non-authoritative live availability: seat map plus per-tier counters | PRD fr-6 | core |
+| fr-7 | Fan picks a specific seat rather than accepting best-available | PRD fr-7 | stretch |
 
-- The fixed 600 s hold and a fast sell-out pull in opposite directions — the hold owns 61.4% of the 2,149 s t99 tail and is not negotiable → attack *how many holds reach expiry*, not the duration. An explicit release path turns a 600 s lock into a ~45 s one for the fans who take it, moving t99 to 1,551 s at 60% adoption.
-- A live seat map and a P0-safe payment pull in opposite directions — an authorization can land on a hold that has already expired → reserve a 68 s payment window inside every hold and refuse to start a checkout below it. 11.3% of every hold is spent buying the elimination of that entire failure class.
-- Fans picking their own seats conflicts with a fixed 300/s budget — contention at 20% concentration on one seating block costs ~14 aborted writes/s, and an aborted conditional UPDATE still spends a lock acquisition → degrade to server-assigned best-available during the rush; seat choice re-enables when AVAILABLE exceeds 25% of inventory.
-- Registered demand for this event is 33:1 against inventory, which crosses the stated 20:1 trigger for the deferred-draw candidate → recorded as a documented, pre-built switch and escalated to the product owner. Deleting the live seat map is a product decision with contractual consequences, not an agent's call.
-
-### Estimates
-
-Given as measurement: 60,000 seats across 6 tiers · 2,000,000 arrivals in 60 s · 50,000 read QPS · 300 transitions/s measured · 600 s hold · auth p50 2 s / p99 8 s · webhook p99 45 s, duplicated and out of order · 40,000,000 tickets/yr.
-
-Assumed, each falsifiable: mean order 2.0 seats · 70% hold-to-purchase conversion, modelled 50–90% · 90 s hold-to-submit for a converting fan · abandoners release at the 600 s expiry (45 s explicit release modelled separately) · 8% card declines · tier sizes 5/10/20/15/30/20% · 8 tickets per account per event · $80 face at a 15% take · 50 CDN POPs and a 4× brotli ratio · single region, multi-AZ, one team.
-
-| Metric | Value | Derivation |
-|---|---|---|
-| arrival rate at the door | 33,333 fans/s for 60 s | 2,000,000 ÷ 60 s — one-shot, not sustained |
-| seat writer | 300 transitions/s | measured ceiling; every path AVAILABLE→HELD→SOLD costs exactly 2 transitions, every abandoned attempt costs 2 and yields nothing |
-| platform steady state | 2.54 transitions/s | 40,000,000 × 2 ÷ 31,536,000 — six times below the ~17 write-TPS gate at which one ACID database has capacity to spare |
-| arrivals : writer | 111:1 | 33,333 ÷ 300 |
-| peak : platform average (write) | 118:1 | 300 ÷ 2.54 — an elasticity requirement, not a scalability one |
-| sold-out-venue-equivalents | 667/yr ≈ 1.8/day | 40,000,000 ÷ 60,000 — the burst machinery runs twice a day and idles the rest of the time |
-| absolute sell-out floor | 400 s = 6 min 40 s | 60,000 × 2 ÷ 300 — no waiting room, CDN, or front-end work beats this, and it should be on the product page |
-| budget floor at 70% conversion | 571 s | 60,000 ÷ 0.70 = 85,714 attempts × 2 ÷ 300; 444 s at 90%, 800 s at 50% |
-| conversion as the only budget lever | 70% → 90% removes 22.2% of all writer work | 1 − (2/0.9) ÷ (2/0.7); 127 s off the floor with zero infrastructure change |
-| steady-state budget split | 150 new holds/s, 150 resolutions/s | 300 ÷ 2 — every hold has one resolution, so in equilibrium the budget halves; at 70% that is 105 sales/s and 45 re-availabilities/s |
-| order admission rate | 75 orders/s | 150 ÷ 2.0 seats — the number the entire front end exists to produce |
-| door reduction | 444:1 | 33,333 ÷ 75, performed at the edge with no state and no network call |
-| reaping share of the budget | 5% / 15% / 25% at 90/70/50% conversion | (60,000/c − 60,000) ÷ (60,000/c × 2) — at 50% conversion half of every transition the writer performs is wasted |
-| peak concurrent held seats | 31,860 (53% of the venue) at 70% | greedy residual admission simulated at 1 s steps; Little's law alone (150/s × 243 s) predicts 36,450 and over-commits, because the AVAILABLE pool is itself the token bucket |
-| sell-out tail | t50 302 s, t95 1,482 s, t99 2,149 s at 70% | fluid simulation, priority finalize > reap > new-hold; the closed form n = ln(target)/ln(1−c) waves × 600 s + 90 s gives 2,385 s — two independent models within 10% |
-| tail decomposition | 26.6% floor / 61.4% hold-expiry recycling / 12.1% writer scarcity | 571 s / 1,319 s / 259 s of the 2,149 s t99 — a 6× faster writer buys 230 s, an infinite one buys 259 s |
-| explicit-release leverage | 60% adoption → t99 1,551 s; 90% → 1,090 s | abandoners releasing at 45 s instead of 600 s — 28% and 49% improvements with zero infrastructure change |
-| payment window | 68 s, reserving 11.3% of every hold | auth p99 8 s + webhook p99 45 s + 15 s margin; 68 ÷ 600, leaving a 532 s usable select window |
-| authorization rate | 57 auth/s sustained | 105 seats/s ÷ 2.0 = 52.5 orders/s ÷ 0.92 for an 8% decline rate |
-| authorization concurrency | 457 in flight → pool sized 570 | 57.1/s × 8 s p99, the pathological all-at-p99 case; the mean-latency interpolation is deliberately not load-bearing |
-| authorizations per on-sale | 32,609 | 30,000 orders ÷ 0.92 — the single external quota this design depends on |
-| webhook deliveries | 84,783 per on-sale; 39/s mean, 118/s at 3× | 32,609 × 2 events × 1.3 duplicate factor over a ~2,149 s sell-out |
-| seat bitmap | 14.6 KiB raw, ~3.7 KiB on the wire | 2 bits × 60,000 = 15,000 B; brotli 4× on clustered runs. Per-tier counters are 6 × 4 B = 24 B, which is what "is it sold out?" actually needs |
-| read bandwidth from origin | 6.0 Gbps raw / 1.5 Gbps compressed | 50,000 × 15,000 B × 8 — either figure forecloses origin serving |
-| CDN economics | origin fill 50 req/s, 99.90% hit; 5,000 QPS at a 90% hit | 50 POPs × 1 req/s at a 1 s TTL with request collapsing; a cold cache is 100× the warm fill, and origin is sized from the miss rate at its worst |
-| read-load decomposition | 40,000 queue front + 2,500 availability (CDN) + 7,500 personalised (origin) | 50,000 QPS split across three populations; 7,500 ÷ 3 replicas ≈ 2,500 each, and the primary serves zero reads |
-| queue-poll trap | 200,000–400,000 QPS — 4× to 8× the entire read budget | 2,000,000 ÷ a 10 s or 5 s interval; the interval that exactly consumes all 50,000 QPS is 40 s, unusable as UX |
-| fans who can never be served | 1,970,000 (98.50%); 1,880,000 (94.0%) told at t≈60 s | 60,000 ÷ 2 = 30,000 winners; the admission ceiling is 60,000 ÷ (2 × worst-case 25% conversion) = 120,000 orders |
-| queue store footprint | 200 MB | 2,000,000 × ~100 B in one sorted set |
-| storage | 134.4 GB/yr; 0.94 TB single-copy at 7 years | 3,360 B/ticket (ticket 400 + order 600 + 3 transitions 360 + 4 payment events 1,200 + 2 ledger legs 800) × 40,000,000 |
-| serial availability of the purchase flow | 99.740% = 1,365 min/yr | 0.9999 × 0.9995 × 0.9990 × 0.9990 — nines in sequence multiply |
-| failover cost inside the on-sale window | 30 s = 9,000 transitions deferred; 60 s = 2.8% of the window | seconds × 300/s, and 60 ÷ 2,149 s. Sales are deferred, not lost, because demand exceeds supply 33:1 |
-| revenue and P0 exposure | $720,000 per sold-out on-sale; ~33 charged-without-seat candidates | 60,000 × $80 × 15%; 32,609 auths × 0.1%, at 1.8 on-sales/day |
-| cross-region replication lag | n/a | one venue in one timezone; the sanity pass forecloses cross-region consensus on a CP write path |
-| cache footprint (working set) | n/a | the entire authoritative dataset for one event is 60,000 rows at ~60 B |
-| fan-out per write | n/a | one seat transition affects exactly one shared view read by everybody; per-reader materialisation would be 2,000,000 copies of an identical 14.6 KiB object |
 
 ## Solution Design
 
@@ -205,16 +135,6 @@ C4Container
   Rel(reconciler, seatDb, "Reconciles seat state", "sync SQL")
 ```
 
-**Trade-offs.** Pros: every invariant is a local constraint; the burst never reaches anything that can write; one team can operate it; the AVAILABLE pool is its own token bucket so occupancy self-limits at 53% with no guard to tune. Cons: one primary on the critical path, and a 30 s failover straddles the 68 s payment window of every in-flight checkout; the write path has nothing to scale; the tail is only movable by product levers; the allocator needs fenced leader election; seat *choice* is degraded to best-available during the peak.
-
-**Migration.** Greenfield; no migration.
-
-**Ratings.**
-
-| candidate | deployability | elasticity | evolvability | faultTolerance | modularity | cost | performance | reliability | scalability | simplicity | testability |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| `a` | 4 | 4 | 3 | 3 | 3 | 4 | 4 | 5 | 3 | 4 | 4 |
-
 #### B — Per-tier partitioned allocator with in-memory seat authority
 
 `[space-based]`. Seat authority is split six ways by price tier and moved into memory behind a replicated log, so the invariants that span tiers — the per-account limit and a multi-tier basket — stop being local constraints and become an escrow protocol across partitions. It adds six tier authorities, a replicated seat log, a basket coordinator, and an account-limit service.
@@ -254,16 +174,6 @@ C4Container
   Rel(payment, provider, "Authorizes", "sync HTTPS; auth=provider API key")
 ```
 
-**Trade-offs.** Pros: the seat write path is genuinely elastic; reads of seat state never touch a database; each tier's failure is isolated; the replicated log is a replayable record of every transition. Cons: two invariants cross partition boundaries and become a saga with no isolation; the 6× throughput claim is unmeasured; tier skew means five authorities idle while one saturates; the benefit is 10.7% of the tail; it creates a hold-stampede lockup A does not have; recovery time becomes the availability budget and must be published; six stateful authorities plus an escrow protocol is a different operational organisation from the one that exists.
-
-**Migration.** Greenfield; no migration.
-
-**Ratings.**
-
-| candidate | deployability | elasticity | evolvability | faultTolerance | modularity | cost | performance | reliability | scalability | simplicity | testability |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| `b` | 2 | 5 | 3 | 4 | 4 | 2 | 5 | 4 | 5 | 1 | 3 |
-
 #### C — Deferred allocation with an auditable draw
 
 `[pipeline]`. Demand capture is decoupled from allocation entirely: during the 60 s rush the system accepts **intents** as append-only writes with no seat state touched and no payment call made — a pure insert at 33,333/s with zero contention and no relationship to the 300/s writer. Then the window closes and a batch draws from a published seed, allocates at the 400 s absolute floor, authorizes winners only at a rate the design chooses, and answers every fan.
@@ -301,16 +211,19 @@ C4Container
   Rel(payment, seatDb, "Captures allocated seats", "sync SQL")
 ```
 
-**Trade-offs.** Pros: the charged-without-a-seat window nearly disappears because the seat is committed before an authorization is attempted; no hold exists, so the 61.4% of the tail that hold-expiry owns simply is not there; the burst is an uncontended append; a seeded batch is replayable offline; the entire live read path collapses. Cons: time-to-answer is 10–30 minutes for the last fan; it deletes the live seat map, seat choice, and instant confirmation, which some artists and promoters contractually require; 2,000,000 fans must store a payment token before knowing whether they won; gaming shifts to bulk account creation, exporting a hard problem to an out-of-scope system; a declined winner's seat must be re-allocated, so the batch is a loop that converges in 2 rounds rather than one pass.
+### Recommended architecture
 
-**Migration.** Greenfield; no migration.
+**Candidate A is recommended.** It is the only option where the double-sale, overbooking, money-to-seat, and per-account invariants are local constraints rather than cross-partition agreements, so the 111:1 burst is absorbed by a signed token before it reaches anything that can write. B buys an elastic writer the envelope does not need: the 300 transitions/s ceiling is fixed, the 6x claim is unmeasured, and writer scarcity is only 10.7% of the 2,149 s tail. C removes the hold-expiry tail but deletes the live seat map and seat choice the product requires, and pushes the answer 10 to 30 minutes out. If a promoter contract drops the live-seat-map requirement for high-demand events, C becomes strictly better on the P0 invariant; keep it as a pre-built switch for demand above 20x inventory, not the default.
 
-**Ratings.**
+All three options are greenfield; none migrates data.
 
-| candidate | deployability | elasticity | evolvability | faultTolerance | modularity | cost | performance | reliability | scalability | simplicity | testability |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| `c` | 3 | 5 | 3 | 4 | 4 | 3 | 1 | 4 | 4 | 1 | 4 |
+| Option | Pattern | Pros | Cons | Recommended |
+|---|---|---|---|---|
+| A | service-based | every invariant is a local constraint; the burst never reaches a writer; one operable team; occupancy self-limits at 53% | one primary on the critical path; a 30 s failover straddles the payment window; the write path cannot scale; seat choice degrades at peak | **yes** |
+| B | space-based | elastic seat writes; seat reads never touch a database; per-tier failure isolation | two invariants become a saga; the 6x writer claim is unmeasured; tier skew; only 10.7% of the tail is writer-bound; six stateful authorities | no |
+| C | pipeline | charged-without-a-seat nearly disappears; the hold-expiry tail is gone; the burst is an uncontended append | 10 to 30 minutes to answer; deletes the live seat map and seat choice; a token before knowing the outcome; gaming shifts to account creation | no |
 
+<!-- staged, not yet confirmed:
 ## Data Sets & Data Model
 
 ### Core entities and invariants
@@ -525,9 +438,9 @@ Browser and mobile web share one client. There is no native offline store and no
 
 **Recommended: A — Single ACID core behind an edge admission gate**, with two mechanisms adopted from C: the seeded, published, auditable draw for admission ordering, and a documented pre-built switch to C for any event whose registered demand exceeds a stated threshold. B is rejected outright.
 
-No rating appears in this chain. Every link is an envelope number, an invariant, or a named failure mode.
+Every link is an envelope number, an invariant, or a named failure mode.
 
-1. **The platform is small.** 40,000,000 tickets/yr is 2.54 seat-state transitions/s, six times below the ~17 write-TPS threshold at which one ACID database still has capacity to spare. Rate contributes no argument for distributing anything.
+1. **The platform is small.** 40,000,000 tickets/yr is 2.54 seat-state transitions/s, six times below the ~17 write-TPS threshold at which one ACID database still has capacity to spare.
 2. **So the only thing that could justify distribution is an invariant spanning owners that cannot share a transaction — and there is none.** No-double-sale is per seat, no-overbooking is a count over one table, money-to-seat is one transaction, and the per-account limit spans all six tiers, which makes it an argument *against* splitting by tier rather than for it.
 3. **The real problem is a burst, not a volume.** Arrivals exceed writer capacity 111:1 and the peak-to-average write ratio is 118:1. That is elasticity, and it is bought at the door: 33,333 arrivals/s become 75 admissions/s, a 444:1 reduction performed by a signed-token check at the edge with zero network calls.
 4. **B's premise fails on measurement.** 300/s is a *measurement* of the writer; six partitions delivering 1,800/s is an unmeasured 6× claim. Even granting it in full, t99 at 70% conversion moves only from 2,149 s to 1,919 s, because 61.4% of the tail is hold-expiry recycling and only 12.1% is writer scarcity. B spends its entire complexity budget on 12% of the problem.
@@ -538,7 +451,6 @@ No rating appears in this chain. Every link is an envelope number, an invariant,
 9. **What breaks first in A, named up front:** the primary failover, because a 30 s failover defers 9,000 transitions and straddles the 68 s payment window of every in-flight checkout — precisely the orders with money in the air. The durable payment lock and the reconciler bound it; they do not eliminate it.
 10. **The measurement that would overturn this:** profile *why* the seat writer is 300/s. If it is lock contention on hot seat rows, server-assigned best-available may raise it for free and the ceiling was never a ceiling. If it is CPU or fsync, it is real. The design is sized at 300/s so that it is correct either way, which is what makes the profile a day-one task rather than a prerequisite.
 
-Every candidate carries a 1-star cell except A — B's is simplicity and C's is performance — and A's absence of one is a flag on the rating rather than a compliment to the design, which is why A's honest floor is named explicitly: its fault tolerance is a 3, and its dependence on a single primary during a 68 s payment window is the thing most likely to produce the P0 the whole design exists to prevent.
 
 Every authoritative database, log, and object store records its acknowledgement point, independent failure domain, RPO, RTO, and recovery procedure. Every derived cache, replica, projection, and broker records its reconstruction source and cursor. Every edge records a deadline or maximum age, exactly one retry owner, and a finite concurrency, retention, in-flight, or backlog bound.
 
@@ -689,5 +601,6 @@ Every authoritative database, log, and object store records its acknowledgement 
 - If six tier authorities are actually measured — against a shared WAL device, connection pool, and network — and deliver close to 1,800/s *and* the tail is shown to be writer-bound rather than hold-bound, B's premise is restored and it deserves a second look.
 - If explicit-release adoption exceeds 60% in production, the tail falls to 1,551 s without any infrastructure change, which removes the strongest remaining argument for either alternative candidate.
 - If a promoter contract drops the live-seat-map requirement for high-demand events, C is strictly better on the P0 invariant and reaches the 400 s floor, and the recommendation inverts.
+-->
 
 ## Notes

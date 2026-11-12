@@ -8,11 +8,9 @@ The artifact and format contract for [SKILL.md](SKILL.md): the records used from
 
 - [The one artifact](#the-one-artifact) · [Frontmatter](#frontmatter) · [Section order](#section-order)
 - [Document skeleton](#document-skeleton) · [Required content by section](#required-content-by-section)
-- [Appendix — Evidence and open questions](#appendix--evidence-and-open-questions)
 - [Structure diagrams](#structure-diagrams) — C4Context and C4Container, and renderer limits
 - [Component kinds](#component-kinds) — the C4 element vocabulary
-- [Candidate records](#candidate-records) — structure diagrams, trade-offs, migration, ratings
-- [Appendix — Architectural debt](#appendix--architectural-debt) — repo mode only; the protocol lives in [AUDIT.md](AUDIT.md)
+- [Candidate records](#candidate-records) — structure diagrams, trade-offs, migration
 - [Verification](#verification) · [ADR on decision](#adr-on-decision-repo-mode) · [Vocabulary](#vocabulary)
 
 ## The one artifact
@@ -45,28 +43,36 @@ A run creates a draft skeleton with this frontmatter and the headings below at *
 
 ## Section order
 
+> **Staged.** Only **Context & Background**, **Scope & Requirements**, and **Solution Design** are confirmed. The remaining sections and appendices are commented out until their turn.
+
 ### Main body
 
-1. **Context & Background** — a plain-language summary of the problem, business objectives, and binding constraints. No technology.
-2. **Scope & Requirements** — in scope, out of scope, FR/NFR tables, top-three characteristics, estimates, and accepted conflicts, sourced from the PRD.
-3. **Solution Design** — current state, future state, high-level solution design, conceptual design, and candidate architectures. Opens with `Structure diagram:` and its reason.
+1. **Context & Background** — a plain-language summary, business objectives, and constraints. Nothing else, and no technology.
+2. **Scope & Requirements** — in scope, out of scope, and an FR table where every requirement names its source. Nothing else.
+3. **Solution Design** — current state, future state, high-level solution design, conceptual design, candidate architectures, and a recommended architecture with one comparison table for every option. Opens with `Structure diagram:` and its reason.
+<!-- staged, not yet confirmed:
 4. **Data Sets & Data Model** — core entities and invariants, consistency model, schemas, data sets, and data impact or migration.
 5. **Key Design Decisions** — decision log, interface contracts, integrations, integration details and data mapping, mobile/client details, recommendation, and rejected alternatives.
 6. **Technology Impacts** — assumptions, delivery risks and issues, operations and rollout, cost/licensing/team impacts, and what breaks first.
 7. **Data Classifications** — data sets and sensitivity, retention and archival, anonymization, normalization, and exemptions or technical debt.
 8. **Next Steps** — owned actions with a horizon.
 9. **Glossary & References** — project-specific terms and acronyms, plus the documents and sources this design depends on.
+-->
 
 ### Appendices
 
+<!-- staged, not yet confirmed:
 - **Appendix — Evidence and open questions** — the investigation register: evidence, questions, unknowns, and checks.
 - **Appendix — Architectural debt** — repository mode only. Omit the heading entirely in greenfield; an empty heading claims a survey that never ran.
 - **Appendix — Critical deep dives** — the two or three decisions under the greatest correctness, cost, or operability pressure.
 - **Appendix — Measurements that could overturn the decision** — the falsification plan for the load-bearing assumptions.
+-->
 
 `## Notes` is last and user-owned.
 
+<!-- staged, not yet confirmed:
 Debt sits in an appendix because it describes the system that exists, while the main body describes the one being proposed. Keep it away from Technology Impacts: a delivery risk is a future failure with a horizon, a finding is a present defect with a cost.
+-->
 
 ## Document skeleton
 
@@ -92,38 +98,28 @@ observed:
 Structure diagram: C4Context + C4Container
 Why: <one line>
 
-## Data Sets & Data Model
-
-## Key Design Decisions
-
-## Technology Impacts
-
-## Data Classifications
-
-## Next Steps
-
-## Glossary & References
-
-## Appendix — Evidence and open questions
-
-## Appendix — Critical deep dives
-
-## Appendix — Measurements that could overturn the decision
+<!-- staged: Data Sets & Data Model, Key Design Decisions, Technology Impacts, Data Classifications, Next Steps, Glossary & References, and the appendices -->
 
 ## Notes
 ```
 
+<!-- staged, not yet confirmed:
 In repository mode, insert `## Appendix — Architectural debt` between the evidence and critical-deep-dives appendices. In greenfield, omit it.
+-->
 
 ## Required content by section
 
-A required section stays present and contains content or `n/a — <reason>`. Never leave an empty heading. Only the debt appendix is omitted entirely, and only in greenfield.
+A confirmed section stays present and contains content or `n/a — <reason>`. Never leave an empty heading.
 
 | Section | Must contain | `n/a` allowed |
 |---|---|---|
-| Context & Background | problem summary; business objectives; binding constraints | Business objectives may state `none` with a reason |
-| Scope & Requirements | in scope; out of scope; FR/NFR tables; top-three characteristics; estimates with derivations; accepted conflicts | Out-of-scope must state `none` rather than disappear |
-| Solution Design | current state; future state; high-level solution design; conceptual design; C4Context high-level view; C4Container per candidate; the recorded structure role | No |
+| Context & Background | problem summary; business objectives; constraints | Business objectives may state `none` with a reason |
+| Scope & Requirements | in scope; out of scope; FR table where every requirement names its source | Out-of-scope must state `none` rather than disappear |
+| Solution Design | current state; future state; high-level solution design; conceptual design; C4Context high-level view; C4Container per candidate; the recorded structure role; a recommended architecture backed by one comparison table of every option's pros and cons | No |
+
+<!-- staged, not yet confirmed:
+| Section | Must contain | `n/a` allowed |
+|---|---|---|
 | Data Sets & Data Model | core entities and invariants; consistency and conflict resolution; schemas; data sets; data impact and migration | `n/a — no structured state` with a reason |
 | Key Design Decisions | decision log; interface contracts; in-scope and out-of-scope integrations; integration details and data mapping; mobile/client details; recommendation and rejected alternatives | Mobile or integrations only when the system has none |
 | Technology Impacts | assumptions; delivery risks and issues; operations and rollout; cost, licensing, and team impacts; what breaks first | No |
@@ -134,18 +130,23 @@ A required section stays present and contains content or `n/a — <reason>`. Nev
 | Appendix — Architectural debt | coverage and findings | Omit the heading entirely in greenfield |
 | Appendix — Critical deep dives | pressure, decision, rejected alternatives, failure mode, evidence | At least one deep dive, or a reason none is needed |
 | Appendix — Measurements that could overturn the decision | measurement, threshold, and action if crossed | At least one measurement, or a reason none is falsifiable |
+-->
 
 ### Section notes
 
-- **Context & Background** states the problem in plain language, then the business objectives and the constraints that bind the design. It carries no technology, no repositories, and no code—those live in Solution Design and Technology Impacts.
-- **Scope & Requirements** carries the FR/NFR tables, exactly three top characteristics, excluded scope, and accepted conflicts, sourced from the PRD's user stories and out-of-scope list. Estimates state assumptions tagged `user` or `assumed`, show derivations, and verify arithmetic with a shell command; a standard metric that does not apply is `n/a` with a reason.
-- **Solution Design** carries the candidate architecture records. Structure is C4Context plus C4Container; the structure diagrams are the record. There are no per-candidate component, edge-contract, or flow-step tables. C4 container descriptions carry load-bearing state contracts. Critical-flow behavior and dependency contracts live in Key Design Decisions. The current state is Architecture 0 in repository mode; in greenfield it states that no implementation exists and names the prompt constraints that stand in for it.
+- **Context & Background** states the problem in plain language, then the business objectives and the constraints that bind the design. It carries nothing else and no technology—those live in Solution Design and Technology Impacts.
+- **Scope & Requirements** carries in scope, out of scope, and the FR table. Every FR names its source (a PRD story or requirement), and no requirement is added without one. It carries no NFR table, characteristics, estimates, or conflicts; those are design inputs recorded where they change a decision.
+- **Solution Design** carries the candidate architecture records. Structure is C4Context plus C4Container; the structure diagrams are the record. There are no per-candidate component, edge-contract, or flow-step tables. C4 container descriptions carry load-bearing state contracts. Critical-flow behavior and dependency contracts live in Key Design Decisions. The current state is Architecture 0 in repository mode; in greenfield it states that no implementation exists and names the prompt constraints that stand in for it. After the candidates, a **Recommended architecture** subsection names the winner, gives its evidence chain, and carries one comparison table listing every option's pros and cons side by side so the reader compares them without moving between sections.
+
+<!-- staged, not yet confirmed:
 - **Data Sets & Data Model** carries the entity, consistency, and schema discipline. For each core entity record its representation in memory and at rest, identity scheme, ordering authority, conflict resolution per field class, durability point, and garbage collection or compaction. For each structured store use a human-readable schema card with keys, indexes, relationships, source-of-truth status, and retention; no executable DDL. Data impact names what moves, whether rollback survives writes in the new format, and which records are authoritative.
-- **Key Design Decisions** records the decisions a reviewer would challenge. Each row names the alternative that lost and the evidence or constraint that closed it. For each interface record style and transport, trust boundary, deadline, retry owner, backpressure, consistency and idempotency scope, compatibility direction, and caller-visible failure including `UNKNOWN`. Integration details include data mapping and mobile/client behavior. The recommendation rests on evidence, never on a rating.
+- **Key Design Decisions** records the decisions a reviewer would challenge. Each row names the alternative that lost and the evidence or constraint that closed it. For each interface record style and transport, trust boundary, deadline, retry owner, backpressure, consistency and idempotency scope, compatibility direction, and caller-visible failure including `UNKNOWN`. Integration details include data mapping and mobile/client behavior. The recommendation rests on evidence.
 - **Technology Impacts** separates delivery assumptions and project risks from the first technical failure. Cost, licensing, skills, and rollout are architecture inputs when they constrain the design.
 - **Data Classifications** names each data set, its sensitivity, retention, deletion or anonymization rule, normalization rule, and any exemption. Financial, health, and personal data are named explicitly when present.
 - **Glossary & References** is project-specific. It is separate from the skill's internal vocabulary below.
+-->
 
+<!-- staged, not yet confirmed:
 ## Appendix — Evidence and open questions
 
 The register lives in the appendix; there is no separate runtime and no byte-hash checkpoint. Record each load-bearing claim as **observed**, **derived**, or **inferred**, with a source locator, scope, and limitations. A content locator identifies evidence; it does not authenticate the source or prove the claim.
@@ -177,6 +178,7 @@ The register lives in the appendix; there is no separate runtime and no byte-has
 Question status is `open | partial | answered`; unknown status is `open | resolved`; check status is `pass | fail | unknown`. A completed record cites fresh evidence and nonempty result text; the host still judges whether the evidence is sufficient.
 
 **Freshness is a judgment, not a digest.** On resume, re-read the cited sources, including staged, unstaged, and untracked work, then update `freshness` to `current`, `stale`, or `unknown`. Changed or inaccessible evidence invalidates dependent completed records until it is re-established. There is no automatic invalidation, checkpoint, or recovery command; say what was actually re-read rather than claiming a check that did not run. Missing coverage establishes neither absence nor refutation.
+-->
 
 ## Structure diagrams
 
@@ -285,7 +287,7 @@ A client-side architecture uses the same kinds: `mobile` or `person` for the she
 
 ## Candidate records
 
-Candidate records live under **Solution Design**. Each candidate carries a C4Container structure diagram, trade-offs, migration, and ratings. There is no per-candidate component table, edge table, flow-step table, or flow diagram.
+Candidate records live under **Solution Design**. Each candidate carries a C4Container structure diagram and a migration note. There is no per-candidate component table, edge table, flow-step table, or flow diagram.
 
 A fact is **load-bearing** when removing it could change topology, failure behavior, cost, or the recommendation, or when a completion invariant depends on it. Put load-bearing state contracts in the C4 container description and dependency contracts in **Key Design Decisions**. Omit everything else.
 
@@ -315,16 +317,17 @@ Put implementation terms such as WAL fsync, synchronous standby, and fenced prom
 
 A load-bearing derived store's description states what it is rebuilt from and how far it has been applied. If a store or view is not load-bearing, omit it from the diagram. Do not put `UNKNOWN` in authoritative lifecycle state: authoritative operations use `PENDING | RECONCILING | SUCCEEDED | FAILED | CANCELLED`; `UNKNOWN` is only the caller's observation after an ambiguous timeout.
 
-### Trade-offs, migration, and ratings
+### Comparison table
 
-- **Pros/cons:** at least one honest weakness per candidate.
-- **Migration (repo mode):** `S` = one release, no data migration; `M` = staged across a few releases or one bulk migration; `L` = a compatibility path that runs beside the old one. State what data moves and whether rollback survives once users write the new format.
-- **Ratings:** a table with one row per candidate and one column per axis, 1–5; `cost` is 5 = cheapest. Architecture 0 is rated too.
+Every candidate's pros and cons live in one table under **Recommended architecture**, with one row per option and a Recommended column. It compares options on stated strengths and weaknesses, not on a number; a score with no derivation is not evidence. Do not scatter per-candidate trade-off paragraphs through the candidate sections. Each candidate still carries at least one honest weakness, stated in the table's Cons column.
 
-| candidate | deployability | elasticity | evolvability | faultTolerance | modularity | cost | performance | reliability | scalability | simplicity | testability |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| `current` | 4 | 2 | 3 | 3 | 4 | 4 | 3 | 4 | 3 | 4 | 4 |
+**Migration (repo mode)** stays with the candidate because it describes that option's rollout: `S` = one release, no data migration; `M` = staged across a few releases or one bulk migration; `L` = a compatibility path that runs beside the old one. State what data moves and whether rollback survives once users write the new format.
 
+| Option | Pattern | Pros | Cons | Recommended |
+|---|---|---|---|---|
+| `a` | service-based | every invariant is local; the burst never reaches a writer | one primary; a failover straddles the payment window | **yes** |
+
+<!-- staged, not yet confirmed:
 ## Appendix — Architectural debt
 
 Repository mode only. The protocol—what counts as debt, the pipeline, categories, severity, and identity—lives in [AUDIT.md](AUDIT.md). This section is the storage format for the debt register. In greenfield, omit the appendix entirely.
@@ -370,24 +373,31 @@ Group by category only when the volume earns it. Order by severity, then confide
 A `note`-shaped finding—an observation with no remedy—omits severity, consequence, and exposure. Severity is looked up from the two axes and never chosen. A finding never carries a numeric score, a debt index, or an estimate in hours or currency.
 
 Identity is `dbt-<pattern>--<sorted component ids>` and nothing else. Read the prior `DESIGN.md` and index every finding by its id and every alias before the finder runs. Carry forward `status`, `justification`, `acceptedUntil`, `firstSeen`, and `aliases` verbatim; regenerate prose, evidence, remedy text, blast radius, and the disconfirming line. `baselineState` is `new | unchanged | updated | absent`, present on every finding or on none.
+-->
 
 ## Verification
 
 Before the run is complete, check the document directly:
 
 1. Frontmatter parses as YAML and `mode`, `status`, and `decided` are consistent.
-2. The required SAD headings appear in the stated order, `Notes` is present, and every required section has content or `n/a — <reason>`.
+2. The confirmed SAD headings appear in the stated order, `Notes` is present, and every confirmed section has content or `n/a — <reason>`.
+<!-- staged, not yet confirmed:
 3. The debt appendix is present in repository mode and absent entirely in greenfield.
+-->
 4. The document records `Structure diagram: C4Context + C4Container`. Every Mermaid block is C4, carries `%% system-in-scope:`, `%% c4-level:`, and `%% legend:`, has a title that names the level and scope, and no flow diagram exists.
 5. There is exactly one `C4Context` for the document and one `C4Container` per candidate. The context has one scoped `System` and no CDN, protocol, or deployment element. Each C4Container has one business-named `System_Boundary` with the context alias and label, no `Person` or `Container_Boundary` inside it, and no generic `Edge`, `Application`, or `Data` systems. Every C4 alias is declared in that block, and the same container alias names the same component across candidates.
 6. Every C4 block passes the text and rendering rules in [C4/PROFILE.md](C4/PROFILE.md): quoted arguments, no commas, parentheses, or HTML, ASCII titles, length limits, and `<sync|async> <transport>` with auth posture at boundaries.
 7. Every L2 person and external system exists in L1 with the same alias, label, and description. Every L2 boundary-crossing relationship rolls up to L1, and every L1 relationship touching the scope is realised by at least one candidate in the same direction. No alias flips between internal and external across candidates.
 8. Every element has at least one relationship. Every internal store has a read and a write path or `archiveOnly`, no `Person` connects to an internal store or worker, and no external system writes an internal store without a recorded exception.
+<!-- staged, not yet confirmed:
 9. Key Design Decisions records each load-bearing dependency's deadline, retry owner, and backlog bound, and each critical flow's named durable or final effect. No candidate carries a component, edge-contract, flow-step, or flow diagram.
 10. Every evidence, question, unknown, check, and finding reference resolves.
 11. Every debt finding has a stable id and the merge fields.
+-->
 12. Every C4 alias resolves within its block.
+<!-- staged, not yet confirmed:
 13. Data classifications and glossary terms are present or marked `n/a` with a reason.
+-->
 14. The document states what was re-read, what was not verified, and which renderer, if any, was used.
 
 Structural checks do not prove the architecture. Semantic review and diagram rendering remain separate results; missing rendering is unknown, not passed.

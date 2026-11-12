@@ -117,7 +117,7 @@ The framing each stage runs under is load-bearing: a verification prompt that op
 
 ## Categories and patterns
 
-Seven categories, closed. The category is the grouping axis in the design document; the pattern is the rule. Components are carried on every finding and drive filtering, not grouping — a finding names as many components as it spans, so grouping by component would either duplicate it or force an arbitrary choice of one. Where a finding genuinely affects several characteristics, name one category and list the rest under `affects` using the ratings axes in [DESIGN-FORMAT.md](DESIGN-FORMAT.md#trade-offs-migration-and-ratings) — forcing a multi-quality problem into a single bucket loses the part that was not chosen, and loses it silently.
+Seven categories, closed. The category is the grouping axis in the design document; the pattern is the rule. Components are carried on every finding and drive filtering, not grouping — a finding names as many components as it spans, so grouping by component would either duplicate it or force an arbitrary choice of one. Where a finding genuinely affects several characteristics, name one category and list the rest under `affects` using the architecture characteristics in [HEURISTICS.md](HEURISTICS.md#characteristics-extract-then-pick-three) — forcing a multi-quality problem into a single bucket loses the part that was not chosen, and loses it silently.
 
 Every pattern carries a **Not when** clause. Without one a signature gets matched against a system it does not fit, and the audit spends its credibility on a design that was right.
 
